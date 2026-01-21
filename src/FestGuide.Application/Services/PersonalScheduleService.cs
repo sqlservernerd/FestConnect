@@ -424,11 +424,14 @@ public class PersonalScheduleService : IPersonalScheduleService
         var stageDict = stages.ToDictionary(s => s.StageId);
 
         // Build DTOs using the dictionaries
+        // Filter entries to only those with valid engagements
+        var validEntries = entries.Where(e => engagementDict.ContainsKey(e.EngagementId));
+        
         var result = new List<PersonalScheduleEntryDto>();
-        foreach (var entry in entries)
+        foreach (var entry in validEntries)
         {
-            if (!engagementDict.TryGetValue(entry.EngagementId, out var engagement))
-                continue;
+            // Safe to access directly since validEntries are pre-filtered to only contain valid engagement IDs
+            var engagement = engagementDict[entry.EngagementId];
 
             timeSlotDict.TryGetValue(engagement.TimeSlotId, out var timeSlot);
             artistDict.TryGetValue(engagement.ArtistId, out var artist);
