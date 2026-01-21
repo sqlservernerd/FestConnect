@@ -325,6 +325,10 @@ public class PermissionService : IPermissionService
             throw new ConflictException("This invitation has already been processed.");
         }
 
+        if (permission.IsRevoked)
+        {
+            throw new ConflictException("This invitation has been revoked.");
+        }
         await _permissionRepository.RevokeAsync(permissionId, ct);
 
         _logger.LogInformation(
