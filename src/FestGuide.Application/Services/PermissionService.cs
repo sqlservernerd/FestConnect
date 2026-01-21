@@ -47,11 +47,16 @@ public class PermissionService : IPermissionService
         }
 
         var permissions = await _permissionRepository.GetActiveByFestivalAsync(festivalId, ct);
-        var result = new List<PermissionSummaryDto>();
+        
+        // Batch fetch all users to avoid N+1 query issue
+        var userIds = permissions.Select(p => p.UserId).Distinct().ToList();
+        var users = await _userRepository.GetByIdsAsync(userIds, ct);
+        var userLookup = users.ToDictionary(u => u.UserId);
 
+        var result = new List<PermissionSummaryDto>();
         foreach (var permission in permissions)
         {
-            var user = await _userRepository.GetByIdAsync(permission.UserId, ct);
+            userLookup.TryGetValue(permission.UserId, out var user);
             result.Add(new PermissionSummaryDto(
                 permission.FestivalPermissionId,
                 permission.UserId,
@@ -246,16 +251,27 @@ public class PermissionService : IPermissionService
     public async Task<IReadOnlyList<PendingInvitationDto>> GetPendingInvitationsAsync(Guid userId, CancellationToken ct = default)
     {
         var permissions = await _permissionRepository.GetByUserAsync(userId, ct);
-        var pendingPermissions = permissions.Where(p => p.IsPending && !p.IsRevoked);
+        var pendingPermissions = permissions.Where(p => p.IsPending && !p.IsRevoked).ToList();
+
+        // Batch fetch all festivals and users to avoid N+1 query issue
+        var festivalIds = pendingPermissions.Select(p => p.FestivalId).Distinct().ToList();
+        var userIds = pendingPermissions.Where(p => p.InvitedByUserId.HasValue)
+            .Select(p => p.InvitedByUserId!.Value).Distinct().ToList();
+
+        var festivals = await _festivalRepository.GetByIdsAsync(festivalIds, ct);
+        var users = await _userRepository.GetByIdsAsync(userIds, ct);
+
+        var festivalLookup = festivals.ToDictionary(f => f.FestivalId);
+        var userLookup = users.ToDictionary(u => u.UserId);
 
         var result = new List<PendingInvitationDto>();
         foreach (var permission in pendingPermissions)
         {
-            var festival = await _festivalRepository.GetByIdAsync(permission.FestivalId, ct);
+            festivalLookup.TryGetValue(permission.FestivalId, out var festival);
             User? invitedBy = null;
             if (permission.InvitedByUserId.HasValue)
             {
-                invitedBy = await _userRepository.GetByIdAsync(permission.InvitedByUserId.Value, ct);
+                userLookup.TryGetValue(permission.InvitedByUserId.Value, out invitedBy);
             }
 
             result.Add(new PendingInvitationDto(
