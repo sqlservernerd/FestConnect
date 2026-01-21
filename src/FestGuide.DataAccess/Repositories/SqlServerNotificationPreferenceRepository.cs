@@ -24,7 +24,7 @@ public class SqlServerNotificationPreferenceRepository : INotificationPreference
             SELECT 
                 NotificationPreferenceId, UserId, PushEnabled, EmailEnabled,
                 ScheduleChangesEnabled, RemindersEnabled, ReminderMinutesBefore,
-                AnnouncementsEnabled, QuietHoursStart, QuietHoursEnd,
+                AnnouncementsEnabled, QuietHoursStart, QuietHoursEnd, TimeZoneId,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             FROM notifications.NotificationPreference
             WHERE UserId = @UserId
@@ -51,18 +51,19 @@ public class SqlServerNotificationPreferenceRepository : INotificationPreference
                     AnnouncementsEnabled = @AnnouncementsEnabled,
                     QuietHoursStart = @QuietHoursStart,
                     QuietHoursEnd = @QuietHoursEnd,
+                    TimeZoneId = @TimeZoneId,
                     ModifiedAtUtc = @ModifiedAtUtc,
                     ModifiedBy = @ModifiedBy
             WHEN NOT MATCHED THEN
                 INSERT (
                     NotificationPreferenceId, UserId, PushEnabled, EmailEnabled,
                     ScheduleChangesEnabled, RemindersEnabled, ReminderMinutesBefore,
-                    AnnouncementsEnabled, QuietHoursStart, QuietHoursEnd,
+                    AnnouncementsEnabled, QuietHoursStart, QuietHoursEnd, TimeZoneId,
                     CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
                 ) VALUES (
                     @NotificationPreferenceId, @UserId, @PushEnabled, @EmailEnabled,
                     @ScheduleChangesEnabled, @RemindersEnabled, @ReminderMinutesBefore,
-                    @AnnouncementsEnabled, @QuietHoursStart, @QuietHoursEnd,
+                    @AnnouncementsEnabled, @QuietHoursStart, @QuietHoursEnd, @TimeZoneId,
                     @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
                 );
             """;
