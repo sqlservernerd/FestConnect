@@ -12,11 +12,16 @@ namespace FestGuide.Api.Hubs;
 public class ScheduleHub : Hub
 {
     private readonly IPersonalScheduleRepository _personalScheduleRepository;
+    private readonly IEditionRepository _editionRepository;
     private readonly ILogger<ScheduleHub> _logger;
 
-    public ScheduleHub(IPersonalScheduleRepository personalScheduleRepository, ILogger<ScheduleHub> logger)
+    public ScheduleHub(
+        IPersonalScheduleRepository personalScheduleRepository,
+        IEditionRepository editionRepository,
+        ILogger<ScheduleHub> logger)
     {
         _personalScheduleRepository = personalScheduleRepository;
+        _editionRepository = editionRepository;
         _logger = logger;
     }
 
@@ -25,6 +30,15 @@ public class ScheduleHub : Hub
     /// </summary>
     public async Task JoinEdition(Guid editionId)
     {
+        // Verify that the edition exists before allowing access
+        var edition = await _editionRepository.GetByIdAsync(editionId);
+        if (edition == null)
+        {
+            _logger.LogWarning("Connection {ConnectionId} attempted to join non-existent edition {EditionId}",
+                Context.ConnectionId, editionId);
+            throw new HubException("Edition not found.");
+        }
+
         var groupName = GetEditionGroupName(editionId);
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
 
