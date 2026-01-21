@@ -681,7 +681,7 @@ public class NotificationServiceTests
     }
 
     [Fact]
-    public async Task SendScheduleChangeAsync_WithDuplicateUsers_SendsOncePerUser()
+    public async Task SendToUserAsync_WithDuplicateUsers_SendsOncePerUser()
     {
         // Arrange
         var editionId = Guid.NewGuid();
@@ -722,6 +722,256 @@ public class NotificationServiceTests
             It.IsAny<string>(),
             It.IsAny<PushNotificationMessage>(),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendToUserAsync_WithRemindersDisabled_DoesNotSendReminder()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var prefs = CreateTestPreference(userId);
+        prefs.RemindersEnabled = false;
+
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(prefs);
+
+        // Act
+        await _sut.SendToUserAsync(userId, "reminder", "Title", "Body");
+
+        // Assert
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SendToUserAsync_WithRemindersEnabled_SendsReminder()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var prefs = CreateTestPreference(userId);
+        prefs.RemindersEnabled = true;
+        var devices = new List<DeviceToken> { CreateTestDeviceToken(userId: userId) };
+
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(prefs);
+        _mockDeviceTokenRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(devices);
+        _mockNotificationLogRepo.Setup(r => r.CreateAsync(It.IsAny<NotificationLog>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+
+        // Act
+        await _sut.SendToUserAsync(userId, "reminder", "Title", "Body");
+
+        // Assert
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendToUserAsync_WithAnnouncementsDisabled_DoesNotSendAnnouncement()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var prefs = CreateTestPreference(userId);
+        prefs.AnnouncementsEnabled = false;
+
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(prefs);
+
+        // Act
+        await _sut.SendToUserAsync(userId, "announcement", "Title", "Body");
+
+        // Assert
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SendToUserAsync_WithAnnouncementsEnabled_SendsAnnouncement()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var prefs = CreateTestPreference(userId);
+        prefs.AnnouncementsEnabled = true;
+        var devices = new List<DeviceToken> { CreateTestDeviceToken(userId: userId) };
+
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(prefs);
+        _mockDeviceTokenRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(devices);
+        _mockNotificationLogRepo.Setup(r => r.CreateAsync(It.IsAny<NotificationLog>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+
+        // Act
+        await _sut.SendToUserAsync(userId, "announcement", "Title", "Body");
+
+        // Assert
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendToUserAsync_DuringQuietHours_DoesNotSend()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var prefs = CreateTestPreference(userId);
+        // Set quiet hours from 22:00 to 08:00, and current time is 23:00 (in quiet hours)
+        prefs.QuietHoursStart = new TimeOnly(22, 0);
+        prefs.QuietHoursEnd = new TimeOnly(8, 0);
+
+        // Mock current time to be 23:00 UTC (11 PM)
+        var quietTime = new DateTime(2026, 1, 20, 23, 0, 0, DateTimeKind.Utc);
+        _mockDateTimeProvider.Setup(x => x.UtcNow).Returns(quietTime);
+
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(prefs);
+
+        // Act
+        await _sut.SendToUserAsync(userId, "schedule_change", "Title", "Body");
+
+        // Assert
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SendToUserAsync_OutsideQuietHours_Sends()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var prefs = CreateTestPreference(userId);
+        // Set quiet hours from 22:00 to 08:00, and current time is 12:00 (not in quiet hours)
+        prefs.QuietHoursStart = new TimeOnly(22, 0);
+        prefs.QuietHoursEnd = new TimeOnly(8, 0);
+
+        // Mock current time to be 12:00 UTC (noon) - outside quiet hours
+        var activeTime = new DateTime(2026, 1, 20, 12, 0, 0, DateTimeKind.Utc);
+        _mockDateTimeProvider.Setup(x => x.UtcNow).Returns(activeTime);
+
+        var devices = new List<DeviceToken> { CreateTestDeviceToken(userId: userId) };
+
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(prefs);
+        _mockDeviceTokenRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(devices);
+        _mockNotificationLogRepo.Setup(r => r.CreateAsync(It.IsAny<NotificationLog>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+
+        // Act
+        await _sut.SendToUserAsync(userId, "schedule_change", "Title", "Body");
+
+        // Assert
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendToUserAsync_DuringQuietHoursEarlyMorning_DoesNotSend()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var prefs = CreateTestPreference(userId);
+        // Set quiet hours from 22:00 to 08:00, and current time is 02:00 (in quiet hours)
+        prefs.QuietHoursStart = new TimeOnly(22, 0);
+        prefs.QuietHoursEnd = new TimeOnly(8, 0);
+
+        // Mock current time to be 02:00 UTC (2 AM) - in quiet hours
+        var quietTime = new DateTime(2026, 1, 20, 2, 0, 0, DateTimeKind.Utc);
+        _mockDateTimeProvider.Setup(x => x.UtcNow).Returns(quietTime);
+
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(prefs);
+
+        // Act
+        await _sut.SendToUserAsync(userId, "schedule_change", "Title", "Body");
+
+        // Assert
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SendToUserAsync_WithSameDayQuietHours_Sends()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var prefs = CreateTestPreference(userId);
+        // Set quiet hours from 13:00 to 15:00 (same day), and current time is 12:00 (not in quiet hours)
+        prefs.QuietHoursStart = new TimeOnly(13, 0);
+        prefs.QuietHoursEnd = new TimeOnly(15, 0);
+
+        // Mock current time to be 12:00 UTC (noon) - before quiet hours
+        var activeTime = new DateTime(2026, 1, 20, 12, 0, 0, DateTimeKind.Utc);
+        _mockDateTimeProvider.Setup(x => x.UtcNow).Returns(activeTime);
+
+        var devices = new List<DeviceToken> { CreateTestDeviceToken(userId: userId) };
+
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(prefs);
+        _mockDeviceTokenRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(devices);
+        _mockNotificationLogRepo.Setup(r => r.CreateAsync(It.IsAny<NotificationLog>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+
+        // Act
+        await _sut.SendToUserAsync(userId, "schedule_change", "Title", "Body");
+
+        // Assert
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SendToUserAsync_WithSameDayQuietHoursDuring_DoesNotSend()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var prefs = CreateTestPreference(userId);
+        // Set quiet hours from 13:00 to 15:00 (same day), and current time is 14:00 (in quiet hours)
+        prefs.QuietHoursStart = new TimeOnly(13, 0);
+        prefs.QuietHoursEnd = new TimeOnly(15, 0);
+
+        // Mock current time to be 14:00 UTC (2 PM) - during quiet hours
+        var quietTime = new DateTime(2026, 1, 20, 14, 0, 0, DateTimeKind.Utc);
+        _mockDateTimeProvider.Setup(x => x.UtcNow).Returns(quietTime);
+
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(prefs);
+
+        // Act
+        await _sut.SendToUserAsync(userId, "schedule_change", "Title", "Body");
+
+        // Assert
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion

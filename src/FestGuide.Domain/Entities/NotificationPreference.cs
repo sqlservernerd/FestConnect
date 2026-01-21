@@ -37,6 +37,7 @@ public class NotificationPreference : BaseEntity
 
     /// <summary>
     /// Gets or sets how many minutes before a performance to send reminders.
+    /// Valid range: 5-120 minutes. Validation is enforced at the application layer.
     /// </summary>
     public int ReminderMinutesBefore { get; set; } = 30;
 
