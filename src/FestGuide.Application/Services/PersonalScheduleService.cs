@@ -440,7 +440,7 @@ public class PersonalScheduleService : IPersonalScheduleService
         var result = new List<PersonalScheduleEntryDto>();
         foreach (var entry in entriesWithValidEngagements)
         {
-            // Safe to access directly since validEntries are pre-filtered to only contain valid engagement IDs
+            // Safe to access directly since entriesWithValidEngagements are pre-filtered to only contain valid engagement IDs
             var engagement = engagementDict[entry.EngagementId];
 
             timeSlotDict.TryGetValue(engagement.TimeSlotId, out var timeSlot);
