@@ -311,4 +311,41 @@ public class SqlServerPersonalScheduleRepository : IPersonalScheduleRepository
         await _connection.ExecuteAsync(
             new CommandDefinition(sql, new { PersonalScheduleId = personalScheduleId, SyncedAtUtc = syncedAtUtc }, cancellationToken: ct));
     }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<PersonalSchedule>> GetByEditionAsync(Guid editionId, CancellationToken ct = default)
+    {
+        const string sql = """
+            SELECT 
+                PersonalScheduleId, UserId, EditionId, Name, IsDefault,
+                LastSyncedAtUtc, IsDeleted, DeletedAtUtc,
+                CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
+            FROM attendee.PersonalSchedule
+            WHERE EditionId = @EditionId AND IsDeleted = 0
+            """;
+
+        var result = await _connection.QueryAsync<PersonalSchedule>(
+            new CommandDefinition(sql, new { EditionId = editionId }, cancellationToken: ct));
+
+        return result.ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Guid>> GetUserIdsWithEngagementAsync(Guid engagementId, CancellationToken ct = default)
+    {
+        const string sql = """
+            SELECT DISTINCT ps.UserId
+            FROM attendee.PersonalSchedule ps
+            INNER JOIN attendee.PersonalScheduleEntry pse ON ps.PersonalScheduleId = pse.PersonalScheduleId
+            WHERE pse.EngagementId = @EngagementId 
+              AND pse.IsDeleted = 0 
+              AND ps.IsDeleted = 0
+              AND pse.NotificationsEnabled = 1
+            """;
+
+        var result = await _connection.QueryAsync<Guid>(
+            new CommandDefinition(sql, new { EngagementId = engagementId }, cancellationToken: ct));
+
+        return result.ToList();
+    }
 }

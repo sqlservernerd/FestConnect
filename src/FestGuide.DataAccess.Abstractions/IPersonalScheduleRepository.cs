@@ -94,4 +94,15 @@ public interface IPersonalScheduleRepository
     /// Updates the last synced timestamp.
     /// </summary>
     Task UpdateLastSyncedAsync(Guid personalScheduleId, DateTime syncedAtUtc, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets all personal schedules for an edition (across all users).
+    /// Used for sending notifications to all attendees of an edition.
+    /// </summary>
+    Task<IReadOnlyList<PersonalSchedule>> GetByEditionAsync(Guid editionId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets user IDs who have a specific engagement saved in their personal schedules.
+    /// </summary>
+    Task<IReadOnlyList<Guid>> GetUserIdsWithEngagementAsync(Guid engagementId, CancellationToken ct = default);
 }

@@ -565,6 +565,165 @@ public class NotificationServiceTests
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task SendScheduleChangeAsync_WithEngagementId_NotifiesUsersWithEngagement()
+    {
+        // Arrange
+        var editionId = Guid.NewGuid();
+        var engagementId = Guid.NewGuid();
+        var userId1 = Guid.NewGuid();
+        var userId2 = Guid.NewGuid();
+        var change = new ScheduleChangeNotification(
+            EditionId: editionId,
+            ChangeType: "time_changed",
+            EngagementId: engagementId,
+            TimeSlotId: Guid.NewGuid(),
+            ArtistName: "Test Artist",
+            StageName: "Main Stage",
+            OldStartTime: _now.AddHours(2),
+            NewStartTime: _now.AddHours(3),
+            Message: "Performance time has changed");
+
+        _mockPersonalScheduleRepo.Setup(r => r.GetUserIdsWithEngagementAsync(engagementId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Guid> { userId1, userId2 });
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((NotificationPreference?)null);
+        _mockDeviceTokenRepo.Setup(r => r.GetByUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DeviceToken> { CreateTestDeviceToken() });
+        _mockNotificationLogRepo.Setup(r => r.CreateAsync(It.IsAny<NotificationLog>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+
+        // Act
+        await _sut.SendScheduleChangeAsync(change);
+
+        // Assert
+        _mockPersonalScheduleRepo.Verify(r => r.GetUserIdsWithEngagementAsync(engagementId, It.IsAny<CancellationToken>()), Times.Once);
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task SendScheduleChangeAsync_WithoutEngagementId_NotifiesAllEditionUsers()
+    {
+        // Arrange
+        var editionId = Guid.NewGuid();
+        var userId1 = Guid.NewGuid();
+        var userId2 = Guid.NewGuid();
+        var change = new ScheduleChangeNotification(
+            EditionId: editionId,
+            ChangeType: "schedule_published",
+            EngagementId: null,
+            TimeSlotId: null,
+            ArtistName: null,
+            StageName: null,
+            OldStartTime: null,
+            NewStartTime: null,
+            Message: "Schedule has been published");
+
+        var schedules = new List<PersonalSchedule>
+        {
+            new() { PersonalScheduleId = Guid.NewGuid(), UserId = userId1, EditionId = editionId },
+            new() { PersonalScheduleId = Guid.NewGuid(), UserId = userId2, EditionId = editionId }
+        };
+
+        _mockPersonalScheduleRepo.Setup(r => r.GetByEditionAsync(editionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(schedules);
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((NotificationPreference?)null);
+        _mockDeviceTokenRepo.Setup(r => r.GetByUserAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DeviceToken> { CreateTestDeviceToken() });
+        _mockNotificationLogRepo.Setup(r => r.CreateAsync(It.IsAny<NotificationLog>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+
+        // Act
+        await _sut.SendScheduleChangeAsync(change);
+
+        // Assert
+        _mockPersonalScheduleRepo.Verify(r => r.GetByEditionAsync(editionId, It.IsAny<CancellationToken>()), Times.Once);
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task SendScheduleChangeAsync_WithNoUsers_DoesNotSendNotifications()
+    {
+        // Arrange
+        var editionId = Guid.NewGuid();
+        var change = new ScheduleChangeNotification(
+            EditionId: editionId,
+            ChangeType: "schedule_published",
+            EngagementId: null,
+            TimeSlotId: null,
+            ArtistName: null,
+            StageName: null,
+            OldStartTime: null,
+            NewStartTime: null,
+            Message: "Schedule has been published");
+
+        _mockPersonalScheduleRepo.Setup(r => r.GetByEditionAsync(editionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PersonalSchedule>());
+
+        // Act
+        await _sut.SendScheduleChangeAsync(change);
+
+        // Assert
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task SendScheduleChangeAsync_WithDuplicateUsers_SendsOncePerUser()
+    {
+        // Arrange
+        var editionId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var change = new ScheduleChangeNotification(
+            EditionId: editionId,
+            ChangeType: "schedule_published",
+            EngagementId: null,
+            TimeSlotId: null,
+            ArtistName: null,
+            StageName: null,
+            OldStartTime: null,
+            NewStartTime: null,
+            Message: "Schedule has been published");
+
+        // User has multiple schedules for the same edition
+        var schedules = new List<PersonalSchedule>
+        {
+            new() { PersonalScheduleId = Guid.NewGuid(), UserId = userId, EditionId = editionId },
+            new() { PersonalScheduleId = Guid.NewGuid(), UserId = userId, EditionId = editionId }
+        };
+
+        _mockPersonalScheduleRepo.Setup(r => r.GetByEditionAsync(editionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(schedules);
+        _mockPreferenceRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((NotificationPreference?)null);
+        _mockDeviceTokenRepo.Setup(r => r.GetByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<DeviceToken> { CreateTestDeviceToken(userId: userId) });
+        _mockNotificationLogRepo.Setup(r => r.CreateAsync(It.IsAny<NotificationLog>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Guid.NewGuid());
+
+        // Act
+        await _sut.SendScheduleChangeAsync(change);
+
+        // Assert - should only send once, not twice
+        _mockPushProvider.Verify(p => p.SendAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<PushNotificationMessage>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     #endregion
 
     #region Helper Methods

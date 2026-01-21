@@ -283,9 +283,26 @@ public class NotificationService : INotificationService
     /// <inheritdoc />
     public async Task SendScheduleChangeAsync(ScheduleChangeNotification change, CancellationToken ct = default)
     {
-        // Find all users who have saved entries for this edition
-        var schedules = await GetSchedulesForEditionAsync(change.EditionId, ct);
-        var userIds = schedules.Select(s => s.UserId).Distinct();
+        IEnumerable<Guid> userIds;
+
+        // If we have a specific engagement, only notify users who have that engagement saved
+        if (change.EngagementId.HasValue)
+        {
+            userIds = await _personalScheduleRepository.GetUserIdsWithEngagementAsync(change.EngagementId.Value, ct);
+        }
+        else
+        {
+            // Otherwise, notify all users who have schedules for this edition
+            var schedules = await _personalScheduleRepository.GetByEditionAsync(change.EditionId, ct);
+            userIds = schedules.Select(s => s.UserId).Distinct();
+        }
+
+        var userIdList = userIds.ToList();
+        if (!userIdList.Any())
+        {
+            _logger.LogDebug("No users to notify for schedule change on edition {EditionId}", change.EditionId);
+            return;
+        }
 
         var data = new Dictionary<string, string>
         {
@@ -297,7 +314,7 @@ public class NotificationService : INotificationService
         if (change.TimeSlotId.HasValue) data["timeSlotId"] = change.TimeSlotId.Value.ToString();
 
         await SendToUsersAsync(
-            userIds,
+            userIdList,
             "schedule_change",
             $"Schedule Update: {change.ArtistName ?? "Performance"}",
             change.Message,
@@ -307,15 +324,7 @@ public class NotificationService : INotificationService
             ct);
 
         _logger.LogInformation("Schedule change notification sent to {Count} users for edition {EditionId}",
-            userIds.Count(), change.EditionId);
-    }
-
-    private async Task<IReadOnlyList<PersonalSchedule>> GetSchedulesForEditionAsync(Guid editionId, CancellationToken ct)
-    {
-        // Get all personal schedules for the edition (from all users)
-        // This would need a repository method - for now return empty
-        // In a real implementation, we'd add a method to get schedules by edition
-        return await Task.FromResult<IReadOnlyList<PersonalSchedule>>(new List<PersonalSchedule>());
+            userIdList.Count, change.EditionId);
     }
 
     private static bool ShouldSendNotificationType(NotificationPreference? prefs, string notificationType)
