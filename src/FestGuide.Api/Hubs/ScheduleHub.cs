@@ -31,7 +31,7 @@ public class ScheduleHub : Hub
     public async Task JoinEdition(Guid editionId)
     {
         // Verify that the edition exists before allowing access
-        var edition = await _editionRepository.GetByIdAsync(editionId).ConfigureAwait(false);
+        var edition = await _editionRepository.GetByIdAsync(editionId, Context.ConnectionAborted).ConfigureAwait(false);
         if (edition == null)
         {
             _logger.LogWarning("Connection {ConnectionId} attempted to join non-existent edition {EditionId}",
@@ -40,7 +40,7 @@ public class ScheduleHub : Hub
         }
 
         var groupName = GetEditionGroupName(editionId);
-        await Groups.AddToGroupAsync(Context.ConnectionId, groupName).ConfigureAwait(false);
+        await Groups.AddToGroupAsync(Context.ConnectionId, groupName, Context.ConnectionAborted).ConfigureAwait(false);
 
         _logger.LogInformation("Connection {ConnectionId} joined edition group {EditionId}",
             Context.ConnectionId, editionId);
@@ -52,7 +52,7 @@ public class ScheduleHub : Hub
     public async Task LeaveEdition(Guid editionId)
     {
         var groupName = GetEditionGroupName(editionId);
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName).ConfigureAwait(false);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName, Context.ConnectionAborted).ConfigureAwait(false);
 
         _logger.LogInformation("Connection {ConnectionId} left edition group {EditionId}",
             Context.ConnectionId, editionId);
@@ -66,7 +66,7 @@ public class ScheduleHub : Hub
         var userId = GetCurrentUserId();
 
         // Verify ownership
-        var schedule = await _personalScheduleRepository.GetByIdAsync(scheduleId).ConfigureAwait(false);
+        var schedule = await _personalScheduleRepository.GetByIdAsync(scheduleId, Context.ConnectionAborted).ConfigureAwait(false);
         if (schedule == null || schedule.UserId != userId)
         {
             _logger.LogWarning("User {UserId} attempted to join personal schedule {ScheduleId} they don't own", userId, scheduleId);
@@ -74,7 +74,7 @@ public class ScheduleHub : Hub
         }
 
         var groupName = GetPersonalScheduleGroupName(scheduleId);
-        await Groups.AddToGroupAsync(Context.ConnectionId, groupName).ConfigureAwait(false);
+        await Groups.AddToGroupAsync(Context.ConnectionId, groupName, Context.ConnectionAborted).ConfigureAwait(false);
 
         _logger.LogInformation("Connection {ConnectionId} joined personal schedule group {ScheduleId}",
             Context.ConnectionId, scheduleId);
@@ -86,7 +86,7 @@ public class ScheduleHub : Hub
     public async Task LeavePersonalSchedule(Guid scheduleId)
     {
         var groupName = GetPersonalScheduleGroupName(scheduleId);
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName).ConfigureAwait(false);
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName, Context.ConnectionAborted).ConfigureAwait(false);
     }
 
     public override async Task OnConnectedAsync()
