@@ -37,12 +37,26 @@ public class NotificationsController : BaseApiController
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<NotificationDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetNotifications(
         [FromQuery] int limit = 50,
         [FromQuery] int offset = 0,
         CancellationToken ct = default)
     {
+        if (limit <= 0 || limit > 100)
+        {
+            _logger.LogWarning("Invalid limit parameter: {Limit}. Must be between 1 and 100.", limit);
+            return BadRequest(CreateError("VALIDATION_ERROR", "The 'limit' parameter must be between 1 and 100."));
+        }
+
+        if (offset < 0)
+        {
+            _logger.LogWarning("Invalid offset parameter: {Offset}. Must be non-negative.", offset);
+            return BadRequest(CreateError("VALIDATION_ERROR", "The 'offset' parameter must be non-negative."));
+        }
+
         var userId = GetCurrentUserId();
+        _logger.LogInformation("Getting notifications for user {UserId} with limit {Limit} and offset {Offset}", userId, limit, offset);
         var notifications = await _notificationService.GetNotificationsAsync(userId, limit, offset, ct);
         return Ok(ApiResponse<IReadOnlyList<NotificationDto>>.Success(notifications));
     }
@@ -55,6 +69,7 @@ public class NotificationsController : BaseApiController
     public async Task<IActionResult> GetUnreadCount(CancellationToken ct)
     {
         var userId = GetCurrentUserId();
+        _logger.LogDebug("Getting unread notification count for user {UserId}", userId);
         var count = await _notificationService.GetUnreadCountAsync(userId, ct);
         return Ok(ApiResponse<UnreadCountDto>.Success(new UnreadCountDto(count)));
     }
@@ -71,11 +86,13 @@ public class NotificationsController : BaseApiController
         var userId = GetCurrentUserId();
         try
         {
+            _logger.LogInformation("Marking notification {NotificationId} as read for user {UserId}", notificationId, userId);
             await _notificationService.MarkAsReadAsync(userId, notificationId, ct);
             return NoContent();
         }
         catch (ForbiddenException ex)
         {
+            _logger.LogWarning(ex, "User {UserId} forbidden from marking notification {NotificationId} as read", userId, notificationId);
             return StatusCode(StatusCodes.Status403Forbidden, CreateError("FORBIDDEN", ex.Message));
         }
     }
@@ -88,6 +105,7 @@ public class NotificationsController : BaseApiController
     public async Task<IActionResult> MarkAllAsRead(CancellationToken ct)
     {
         var userId = GetCurrentUserId();
+        _logger.LogInformation("Marking all notifications as read for user {UserId}", userId);
         await _notificationService.MarkAllAsReadAsync(userId, ct);
         return NoContent();
     }
@@ -100,6 +118,7 @@ public class NotificationsController : BaseApiController
     public async Task<IActionResult> GetPreferences(CancellationToken ct)
     {
         var userId = GetCurrentUserId();
+        _logger.LogDebug("Getting notification preferences for user {UserId}", userId);
         var prefs = await _notificationService.GetPreferencesAsync(userId, ct);
         return Ok(ApiResponse<NotificationPreferenceDto>.Success(prefs));
     }
@@ -118,9 +137,11 @@ public class NotificationsController : BaseApiController
         var validation = await _preferenceValidator.ValidateAsync(request, ct);
         if (!validation.IsValid)
         {
+            _logger.LogWarning("Validation failed for updating notification preferences for user {UserId}", userId);
             return BadRequest(CreateValidationError(validation));
         }
 
+        _logger.LogInformation("Updating notification preferences for user {UserId}", userId);
         var prefs = await _notificationService.UpdatePreferencesAsync(userId, request, ct);
         return Ok(ApiResponse<NotificationPreferenceDto>.Success(prefs));
     }
