@@ -288,6 +288,28 @@ var scheduleItems =
 var festivals = await _repository.GetAllAsync(ct);
 var count = festivals.Count;    // ✓ Materialized
 var first = festivals.First();  // ✓ Uses same collection
+
+// ✓ Good: Explicit filtering in foreach loops
+// Use .OfType<T>() to filter out nulls and cast to non-nullable type
+foreach (var artist in artists.OfType<Artist>())
+{
+    artistDictionary[artist.ArtistId] = artist;
+}
+
+// ✓ Also acceptable: .Where() with null-forgiving operator (when type is already non-nullable)
+foreach (var artist in artists.Where(a => a != null))
+{
+    artistDictionary[artist!.ArtistId] = artist;
+}
+
+// ✗ Bad: Implicit filtering with if inside foreach
+foreach (var artist in artists)
+{
+    if (artist != null)
+    {
+        artistDictionary[artist.ArtistId] = artist;
+    }
+}
 ```
 
 ---
