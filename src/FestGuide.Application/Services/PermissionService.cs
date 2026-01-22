@@ -162,24 +162,15 @@ public class PermissionService : IPermissionService
         var inviter = await _userRepository.GetByIdAsync(invitingUserId, ct);
 
         // Send invitation email
-        // Note: Email sending is best-effort. If email fails, the invitation is still created successfully
-        // and the user is granted permissions. The user can still access the festival if they know about it.
-        // Consider tracking email delivery status separately if notification reliability is critical.
-        try
-        {
-            await _emailService.SendInvitationEmailAsync(
-                request.Email,
-                festival?.Name ?? "Unknown Festival",
-                inviter?.DisplayName ?? inviter?.Email ?? "A team member",
-                request.Role.ToString(),
-                isNewUser,
-                ct);
-        }
-        catch (Exception ex)
-        {
-            // Log but don't fail the invitation - the permission has been granted regardless
-            _logger.LogWarning(ex, "Failed to send invitation email to {Email}", request.Email);
-        }
+        // Send invitation email - if this fails, the entire operation fails
+        // This ensures the caller knows if the invitation email was not sent
+        await _emailService.SendInvitationEmailAsync(
+            request.Email,
+            festival?.Name ?? "Unknown Festival",
+            inviter?.DisplayName ?? inviter?.Email ?? "A team member",
+            request.Role.ToString(),
+            isNewUser,
+            ct);
 
         var message = isNewUser
             ? $"Invitation sent to {request.Email}. They will need to create an account to accept."
