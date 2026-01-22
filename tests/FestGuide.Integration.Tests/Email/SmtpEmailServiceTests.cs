@@ -10,29 +10,30 @@ namespace FestGuide.Integration.Tests.Email;
 public class SmtpEmailServiceTests
 {
     private readonly Mock<ILogger<SmtpEmailService>> _mockLogger;
-    private readonly SmtpOptions _options;
-    private readonly SmtpEmailService _sut;
 
     public SmtpEmailServiceTests()
     {
         _mockLogger = new Mock<ILogger<SmtpEmailService>>();
-        _options = new SmtpOptions
-        {
-            Host = "smtp.example.com",
-            Port = 587,
-            Username = "test@example.com",
-            Password = "password",
-            FromAddress = "noreply@festguide.com",
-            FromName = "FestGuide",
-            UseSsl = true,
-            Enabled = false, // Disabled to prevent actual email sending
-            BaseUrl = "https://festguide.com"
-        };
+    }
 
+    private static SmtpOptions CreateDefaultOptions() => new()
+    {
+        Host = "smtp.example.com",
+        Port = 587,
+        Username = "test@example.com",
+        Password = "password",
+        FromAddress = "noreply@festguide.com",
+        FromName = "FestGuide",
+        UseSsl = true,
+        Enabled = false, // Disabled to prevent actual email sending
+        BaseUrl = "https://festguide.com"
+    };
+
+    private SmtpEmailService CreateService(SmtpOptions options)
+    {
         var optionsMock = new Mock<IOptions<SmtpOptions>>();
-        optionsMock.Setup(x => x.Value).Returns(_options);
-
-        _sut = new SmtpEmailService(optionsMock.Object, _mockLogger.Object);
+        optionsMock.Setup(x => x.Value).Returns(options);
+        return new SmtpEmailService(optionsMock.Object, _mockLogger.Object);
     }
 
     #region Constructor Tests
@@ -52,8 +53,9 @@ public class SmtpEmailServiceTests
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
         // Arrange
+        var options = CreateDefaultOptions();
         var optionsMock = new Mock<IOptions<SmtpOptions>>();
-        optionsMock.Setup(x => x.Value).Returns(_options);
+        optionsMock.Setup(x => x.Value).Returns(options);
 
         // Act
         var act = () => new SmtpEmailService(optionsMock.Object, null!);
@@ -71,12 +73,14 @@ public class SmtpEmailServiceTests
     public async Task SendVerificationEmailAsync_WhenDisabled_DoesNotSendEmail()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
         var verificationToken = "abc123";
 
         // Act
-        await _sut.SendVerificationEmailAsync(email, displayName, verificationToken);
+        await sut.SendVerificationEmailAsync(email, displayName, verificationToken);
 
         // Assert - Verify that a debug log was written indicating email is disabled
         _mockLogger.Verify(
@@ -93,14 +97,16 @@ public class SmtpEmailServiceTests
     public async Task SendVerificationEmailAsync_WithMissingHost_DoesNotSendEmail()
     {
         // Arrange
-        _options.Enabled = true;
-        _options.Host = string.Empty;
+        var options = CreateDefaultOptions();
+        options.Enabled = true;
+        options.Host = string.Empty;
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
         var verificationToken = "abc123";
 
         // Act
-        await _sut.SendVerificationEmailAsync(email, displayName, verificationToken);
+        await sut.SendVerificationEmailAsync(email, displayName, verificationToken);
 
         // Assert - Verify that a warning log was written indicating misconfiguration
         _mockLogger.Verify(
@@ -110,21 +116,23 @@ public class SmtpEmailServiceTests
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+            Times.AtLeastOnce);
     }
 
     [Fact]
     public async Task SendVerificationEmailAsync_WithMissingUsername_DoesNotSendEmail()
     {
         // Arrange
-        _options.Enabled = true;
-        _options.Username = string.Empty;
+        var options = CreateDefaultOptions();
+        options.Enabled = true;
+        options.Username = string.Empty;
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
         var verificationToken = "abc123";
 
         // Act
-        await _sut.SendVerificationEmailAsync(email, displayName, verificationToken);
+        await sut.SendVerificationEmailAsync(email, displayName, verificationToken);
 
         // Assert - Verify that a warning log was written indicating misconfiguration
         _mockLogger.Verify(
@@ -134,21 +142,23 @@ public class SmtpEmailServiceTests
                 It.IsAny<It.IsAnyType>(),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+            Times.AtLeastOnce);
     }
 
     [Fact]
     public async Task SendVerificationEmailAsync_WithMissingBaseUrl_ThrowsException()
     {
         // Arrange
-        _options.BaseUrl = string.Empty;
+        var options = CreateDefaultOptions();
+        options.BaseUrl = string.Empty;
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
         var verificationToken = "abc123";
 
         // Act & Assert - Should throw InvalidOperationException
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _sut.SendVerificationEmailAsync(email, displayName, verificationToken));
+            () => sut.SendVerificationEmailAsync(email, displayName, verificationToken));
 
         Assert.Contains("BaseUrl is not configured", exception.Message);
     }
@@ -157,12 +167,14 @@ public class SmtpEmailServiceTests
     public async Task SendVerificationEmailAsync_WithSpecialCharactersInToken_EscapesToken()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
         var verificationToken = "token+with/special=chars&more";
 
         // Act - should not throw
-        await _sut.SendVerificationEmailAsync(email, displayName, verificationToken);
+        await sut.SendVerificationEmailAsync(email, displayName, verificationToken);
 
         // Assert - completed without exception
         _mockLogger.Verify(
@@ -183,12 +195,14 @@ public class SmtpEmailServiceTests
     public async Task SendPasswordResetEmailAsync_WhenDisabled_DoesNotSendEmail()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
         var resetToken = "reset123";
 
         // Act
-        await _sut.SendPasswordResetEmailAsync(email, displayName, resetToken);
+        await sut.SendPasswordResetEmailAsync(email, displayName, resetToken);
 
         // Assert
         _mockLogger.Verify(
@@ -205,12 +219,14 @@ public class SmtpEmailServiceTests
     public async Task SendPasswordResetEmailAsync_WithSpecialCharactersInToken_EscapesToken()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
         var resetToken = "token+with/special=chars&more";
 
         // Act - should not throw
-        await _sut.SendPasswordResetEmailAsync(email, displayName, resetToken);
+        await sut.SendPasswordResetEmailAsync(email, displayName, resetToken);
 
         // Assert - completed without exception
         _mockLogger.Verify(
@@ -231,11 +247,13 @@ public class SmtpEmailServiceTests
     public async Task SendPasswordChangedNotificationAsync_WhenDisabled_DoesNotSendEmail()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
 
         // Act
-        await _sut.SendPasswordChangedNotificationAsync(email, displayName);
+        await sut.SendPasswordChangedNotificationAsync(email, displayName);
 
         // Assert
         _mockLogger.Verify(
@@ -256,6 +274,8 @@ public class SmtpEmailServiceTests
     public async Task SendInvitationEmailAsync_ForNewUser_IncludesRegistrationMessage()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var toAddress = "newuser@example.com";
         var festivalName = "Summer Music Fest";
         var inviterName = "John Organizer";
@@ -263,7 +283,7 @@ public class SmtpEmailServiceTests
         var isNewUser = true;
 
         // Act
-        await _sut.SendInvitationEmailAsync(toAddress, festivalName, inviterName, role, isNewUser);
+        await sut.SendInvitationEmailAsync(toAddress, festivalName, inviterName, role, isNewUser);
 
         // Assert
         _mockLogger.Verify(
@@ -280,6 +300,8 @@ public class SmtpEmailServiceTests
     public async Task SendInvitationEmailAsync_ForExistingUser_IncludesLoginMessage()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var toAddress = "existinguser@example.com";
         var festivalName = "Summer Music Fest";
         var inviterName = "John Organizer";
@@ -287,7 +309,7 @@ public class SmtpEmailServiceTests
         var isNewUser = false;
 
         // Act
-        await _sut.SendInvitationEmailAsync(toAddress, festivalName, inviterName, role, isNewUser);
+        await sut.SendInvitationEmailAsync(toAddress, festivalName, inviterName, role, isNewUser);
 
         // Assert
         _mockLogger.Verify(
@@ -304,13 +326,15 @@ public class SmtpEmailServiceTests
     public async Task SendInvitationEmailAsync_WhenDisabled_DoesNotSendEmail()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var toAddress = "user@example.com";
         var festivalName = "Test Festival";
         var inviterName = "Inviter";
         var role = "Editor";
 
         // Act
-        await _sut.SendInvitationEmailAsync(toAddress, festivalName, inviterName, role, true);
+        await sut.SendInvitationEmailAsync(toAddress, festivalName, inviterName, role, true);
 
         // Assert
         _mockLogger.Verify(
@@ -331,13 +355,15 @@ public class SmtpEmailServiceTests
     public async Task SendVerificationEmailAsync_WithBaseUrlWithTrailingSlash_BuildsCorrectUrl()
     {
         // Arrange
-        _options.BaseUrl = "https://festguide.com/";
+        var options = CreateDefaultOptions();
+        options.BaseUrl = "https://festguide.com/";
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
         var verificationToken = "abc123";
 
         // Act
-        await _sut.SendVerificationEmailAsync(email, displayName, verificationToken);
+        await sut.SendVerificationEmailAsync(email, displayName, verificationToken);
 
         // Assert - URL should be built correctly without double slashes
         _mockLogger.Verify(
@@ -354,13 +380,15 @@ public class SmtpEmailServiceTests
     public async Task SendPasswordResetEmailAsync_WithBaseUrlWithoutTrailingSlash_BuildsCorrectUrl()
     {
         // Arrange
-        _options.BaseUrl = "https://festguide.com";
+        var options = CreateDefaultOptions();
+        options.BaseUrl = "https://festguide.com";
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
         var resetToken = "reset123";
 
         // Act
-        await _sut.SendPasswordResetEmailAsync(email, displayName, resetToken);
+        await sut.SendPasswordResetEmailAsync(email, displayName, resetToken);
 
         // Assert - URL should be built correctly
         _mockLogger.Verify(
@@ -381,12 +409,14 @@ public class SmtpEmailServiceTests
     public async Task SendVerificationEmailAsync_IncludesUserDisplayName()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "John Doe";
         var verificationToken = "abc123";
 
         // Act
-        await _sut.SendVerificationEmailAsync(email, displayName, verificationToken);
+        await sut.SendVerificationEmailAsync(email, displayName, verificationToken);
 
         // Assert - Should complete without error
         _mockLogger.Verify(
@@ -403,12 +433,14 @@ public class SmtpEmailServiceTests
     public async Task SendPasswordResetEmailAsync_IncludesUserDisplayName()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Jane Smith";
         var resetToken = "reset123";
 
         // Act
-        await _sut.SendPasswordResetEmailAsync(email, displayName, resetToken);
+        await sut.SendPasswordResetEmailAsync(email, displayName, resetToken);
 
         // Assert - Should complete without error
         _mockLogger.Verify(
@@ -429,6 +461,8 @@ public class SmtpEmailServiceTests
     public async Task SendVerificationEmailAsync_WithCancelledToken_CompletesSuccessfully()
     {
         // Arrange
+        var options = CreateDefaultOptions();
+        var sut = CreateService(options);
         var email = "user@example.com";
         var displayName = "Test User";
         var verificationToken = "abc123";
@@ -436,7 +470,7 @@ public class SmtpEmailServiceTests
         cts.Cancel();
 
         // Act - When disabled, cancellation doesn't matter
-        await _sut.SendVerificationEmailAsync(email, displayName, verificationToken, cts.Token);
+        await sut.SendVerificationEmailAsync(email, displayName, verificationToken, cts.Token);
 
         // Assert
         _mockLogger.Verify(

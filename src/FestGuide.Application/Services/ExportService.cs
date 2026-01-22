@@ -78,7 +78,7 @@ public class ExportService : IExportService
             sb.AppendLine(analyticsCsv);
         }
 
-        var fileName = $"{edition.Name.Replace(" ", "_")}_export_{_dateTimeProvider.UtcNow:yyyyMMdd_HHmmss}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name)}_export_{_dateTimeProvider.UtcNow:yyyyMMdd_HHmmss}.csv";
         var data = Encoding.UTF8.GetBytes(sb.ToString());
 
         _logger.LogInformation("Export generated for edition {EditionId} by user {OrganizerId}", editionId, organizerId);
@@ -95,7 +95,7 @@ public class ExportService : IExportService
         await EnsureOrganizerAccessAsync(edition.FestivalId, organizerId, ct);
 
         var csv = await BuildScheduleCsvAsync(editionId, ct);
-        var fileName = $"{edition.Name.Replace(" ", "_")}_schedule_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name)}_schedule_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
         var data = Encoding.UTF8.GetBytes(csv);
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -110,7 +110,7 @@ public class ExportService : IExportService
         await EnsureOrganizerAccessAsync(edition.FestivalId, organizerId, ct);
 
         var csv = await BuildArtistsCsvAsync(editionId, ct);
-        var fileName = $"{edition.Name.Replace(" ", "_")}_artists_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name)}_artists_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
         var data = Encoding.UTF8.GetBytes(csv);
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -125,7 +125,7 @@ public class ExportService : IExportService
         await EnsureOrganizerAccessAsync(edition.FestivalId, organizerId, ct);
 
         var csv = await BuildAnalyticsCsvAsync(editionId, fromUtc, toUtc, ct);
-        var fileName = $"{edition.Name.Replace(" ", "_")}_analytics_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name)}_analytics_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
         var data = Encoding.UTF8.GetBytes(csv);
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -146,7 +146,7 @@ public class ExportService : IExportService
 
         if (topEngagements.Count == 0)
         {
-            var emptyFileName = $"{edition.Name.Replace(" ", "_")}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+            var emptyFileName = $"{SanitizeFilename(edition.Name)}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
             var emptyData = Encoding.UTF8.GetBytes(sb.ToString());
             return new ExportResultDto(emptyFileName, "text/csv", emptyData);
         }
@@ -231,7 +231,7 @@ public class ExportService : IExportService
             sb.AppendLine(line);
         }
 
-        var fileName = $"{edition.Name.Replace(" ", "_")}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name)}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
         var data = Encoding.UTF8.GetBytes(sb.ToString());
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -378,5 +378,32 @@ public class ExportService : IExportService
             return $"\"{value.Replace("\"", "\"\"")}\"";
         }
         return value;
+    }
+
+    /// <summary>
+    /// Sanitizes a string for use in a filename by replacing invalid characters.
+    /// </summary>
+    /// <param name="name">The name to sanitize.</param>
+    /// <returns>A sanitized filename-safe string.</returns>
+    private static string SanitizeFilename(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "export";
+        }
+
+        // Replace invalid filename characters with underscores
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var sanitized = name;
+        
+        foreach (var c in invalidChars)
+        {
+            sanitized = sanitized.Replace(c, '_');
+        }
+
+        // Also replace spaces with underscores for consistency
+        sanitized = sanitized.Replace(' ', '_');
+
+        return sanitized;
     }
 }
