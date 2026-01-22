@@ -67,7 +67,15 @@ internal sealed class TransactionScope : ITransactionScope
             // If not explicitly committed or rolled back, roll back on dispose
             if (!_completed)
             {
-                _transaction.Rollback();
+                try
+                {
+                    _transaction.Rollback();
+                }
+                catch
+                {
+                    // Suppress exceptions during rollback in disposal
+                    // The transaction may already be closed or in an invalid state
+                }
             }
         }
         finally
