@@ -1,7 +1,10 @@
 using System.Text;
+using FestGuide.Api.Hubs;
 using FestGuide.Application;
+using FestGuide.Application.Services;
 using FestGuide.DataAccess;
 using FestGuide.Infrastructure;
+using FestGuide.Integrations.PushNotifications;
 using FestGuide.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -20,6 +23,23 @@ var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<Jw
 // Add services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// Add SignalR
+builder.Services.AddSignalR(options =>
+{
+    // Set maximum message size to 128KB to support large schedule updates
+    options.MaximumReceiveMessageSize = 128 * 1024;
+
+    // Enable detailed errors in development for easier debugging
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableDetailedErrors = true;
+    }
+
+    // Configure keep-alive and timeout intervals for varying network conditions
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+});
 
 // Add authentication
 builder.Services.AddAuthentication(options =>
@@ -40,6 +60,21 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
         ClockSkew = TimeSpan.Zero
     };
+
+    // Configure JWT for SignalR
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
@@ -50,6 +85,12 @@ builder.Services.AddInfrastructureServices(baseUrl);
 builder.Services.AddSecurityServices();
 builder.Services.AddApplicationServices();
 builder.Services.AddDataAccessServices(connectionString);
+
+// Phase 5 - Push notification provider (stub for development)
+builder.Services.AddScoped<IPushNotificationProvider, StubPushNotificationProvider>();
+
+// Phase 5 - SignalR hub service
+builder.Services.AddScoped<IScheduleHubService, ScheduleHubService>();
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -71,6 +112,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Map SignalR hubs
+app.MapHub<ScheduleHub>("/hubs/schedule");
 
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }));
