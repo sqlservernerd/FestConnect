@@ -135,6 +135,22 @@ public class PermissionService : IPermissionService
         }
 
         var now = _dateTimeProvider.UtcNow;
+        
+        // Get festival and inviter details for the email
+        var festival = await _festivalRepository.GetByIdAsync(festivalId, ct);
+        var inviter = await _userRepository.GetByIdAsync(invitingUserId, ct);
+
+        // Send invitation email first - if this fails, no permission is created
+        // This ensures the user is notified before we grant access
+        await _emailService.SendInvitationEmailAsync(
+            request.Email,
+            festival?.Name ?? "Unknown Festival",
+            inviter?.DisplayName ?? inviter?.Email ?? "A team member",
+            request.Role.ToString(),
+            isNewUser,
+            ct);
+
+        // Create the permission after successful email sending
         var permission = new FestivalPermission
         {
             FestivalPermissionId = Guid.NewGuid(),
@@ -156,21 +172,6 @@ public class PermissionService : IPermissionService
         _logger.LogInformation(
             "User {InvitingUserId} invited {Email} to festival {FestivalId} with role {Role}",
             invitingUserId, request.Email, festivalId, request.Role);
-
-        // Get festival and inviter details for the email
-        var festival = await _festivalRepository.GetByIdAsync(festivalId, ct);
-        var inviter = await _userRepository.GetByIdAsync(invitingUserId, ct);
-
-        // Send invitation email
-        // Send invitation email - if this fails, the entire operation fails
-        // This ensures the caller knows if the invitation email was not sent
-        await _emailService.SendInvitationEmailAsync(
-            request.Email,
-            festival?.Name ?? "Unknown Festival",
-            inviter?.DisplayName ?? inviter?.Email ?? "A team member",
-            request.Role.ToString(),
-            isNewUser,
-            ct);
 
         var message = isNewUser
             ? $"Invitation sent to {request.Email}. They will need to create an account to accept."
