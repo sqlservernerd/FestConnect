@@ -540,7 +540,8 @@ public class ExportService : IExportService
             int pos = 0;
             while (pos < span.Length)
             {
-                int invalidIndex = span.Slice(pos).IndexOfAny(InvalidFilenameChars);
+                var remaining = span.Slice(pos);
+                int invalidIndex = remaining.IndexOfAny(InvalidFilenameChars);
                 if (invalidIndex == -1)
                 {
                     break;
