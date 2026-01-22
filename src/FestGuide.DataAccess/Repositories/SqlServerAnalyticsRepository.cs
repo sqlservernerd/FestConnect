@@ -41,6 +41,7 @@ public class SqlServerAnalyticsRepository : IAnalyticsRepository
     /// <inheritdoc />
     public async Task RecordEventsAsync(IEnumerable<AnalyticsEvent> events, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(events);
         const string sql = """
             INSERT INTO analytics.AnalyticsEvent (
                 AnalyticsEventId, UserId, FestivalId, EditionId, EventType,
