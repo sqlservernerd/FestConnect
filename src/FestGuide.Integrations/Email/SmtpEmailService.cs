@@ -21,43 +21,52 @@ public class SmtpEmailService : IEmailService
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        // Validate that required SMTP settings are configured when email sending is enabled
+        // Validate required SMTP settings at startup when email sending is enabled
         if (_options.Enabled)
         {
-            var missingSettings = new List<string>();
+            ValidateConfiguration();
+        }
+    }
 
-            if (string.IsNullOrWhiteSpace(_options.Host))
-            {
-                missingSettings.Add("Host");
-            }
+    /// <summary>
+    /// Validates SMTP configuration settings at startup to fail fast if misconfigured.
+    /// </summary>
+    private void ValidateConfiguration()
+    {
+        var missingSettings = new List<string>();
 
-            if (string.IsNullOrWhiteSpace(_options.FromAddress))
-            {
-                missingSettings.Add("FromAddress");
-            }
+        if (string.IsNullOrWhiteSpace(_options.Host))
+        {
+            missingSettings.Add("Host");
+        }
 
-            if (string.IsNullOrWhiteSpace(_options.Username))
-            {
-                missingSettings.Add("Username");
-            }
+        if (string.IsNullOrWhiteSpace(_options.FromAddress))
+        {
+            missingSettings.Add("FromAddress");
+        }
 
-            if (string.IsNullOrWhiteSpace(_options.Password))
-            {
-                missingSettings.Add("Password");
-            }
+        if (string.IsNullOrWhiteSpace(_options.Username))
+        {
+            missingSettings.Add("Username");
+        }
 
-            if (string.IsNullOrWhiteSpace(_options.BaseUrl))
-            {
-                missingSettings.Add("BaseUrl");
-            }
+        if (string.IsNullOrWhiteSpace(_options.Password))
+        {
+            missingSettings.Add("Password");
+        }
 
-            if (missingSettings.Count > 0)
-            {
-                _logger.LogWarning(
-                    "SMTP email sending is enabled but the following required settings are not configured: {MissingSettings}. " +
-                    "Email sending will fail. Configure these values using user secrets, environment variables, or a secure configuration provider.",
-                    string.Join(", ", missingSettings));
-            }
+        if (string.IsNullOrWhiteSpace(_options.BaseUrl))
+        {
+            missingSettings.Add("BaseUrl");
+        }
+
+        if (missingSettings.Count > 0)
+        {
+            var errorMessage = $"SMTP email sending is enabled but the following required settings are not configured: {string.Join(", ", missingSettings)}. " +
+                "Configure these values using user secrets, environment variables, or a secure configuration provider.";
+            
+            _logger.LogError(errorMessage);
+            throw new InvalidOperationException(errorMessage);
         }
     }
 
@@ -226,12 +235,14 @@ public class SmtpEmailService : IEmailService
 
     private string BuildUrl(string path)
     {
-        var baseUrl = _options.BaseUrl?.TrimEnd('/') ?? string.Empty;
+        // BaseUrl is already validated at startup if email is enabled,
+        // but we keep this check as a defensive measure
+        var baseUrl = _options.BaseUrl?.TrimEnd('/');
         
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
             throw new InvalidOperationException(
-                "BaseUrl is not configured in SmtpOptions. Email sending cannot proceed without a valid base URL for links.");
+                "BaseUrl is not configured in SmtpOptions. This should have been caught during service initialization.");
         }
 
         return $"{baseUrl}/{path.TrimStart('/')}";

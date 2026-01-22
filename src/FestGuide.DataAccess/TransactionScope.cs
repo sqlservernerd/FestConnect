@@ -62,26 +62,22 @@ internal sealed class TransactionScope : ITransactionScope
             return;
         }
 
-        try
+        // If not explicitly committed or rolled back, roll back on dispose
+        if (!_completed)
         {
-            // If not explicitly committed or rolled back, roll back on dispose
-            if (!_completed)
+            try
             {
-                try
-                {
-                    _transaction.Rollback();
-                }
-                catch
-                {
-                    // Suppress exceptions during rollback in disposal
-                    // The transaction may already be closed or in an invalid state
-                }
+                _transaction.Rollback();
+            }
+            catch
+            {
+                // Suppress exceptions during rollback in disposal
+                // The transaction may already be closed or in an invalid state
             }
         }
-        finally
-        {
-            _transaction.Dispose();
-            _disposed = true;
-        }
+
+        // Use Dispose to clean up the transaction resource
+        _transaction.Dispose();
+        _disposed = true;
     }
 }

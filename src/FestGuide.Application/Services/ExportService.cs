@@ -80,7 +80,7 @@ public class ExportService : IExportService
             sb.AppendLine(analyticsCsv);
         }
 
-        var fileName = $"{SanitizeFilename(edition.Name)}_export_{_dateTimeProvider.UtcNow:yyyyMMdd_HHmmss}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name, "_export")}.csv";
         var data = Encoding.UTF8.GetBytes(sb.ToString());
 
         _logger.LogInformation("Export generated for edition {EditionId} by user {OrganizerId}", editionId, organizerId);
@@ -97,7 +97,7 @@ public class ExportService : IExportService
         await EnsureOrganizerAccessAsync(edition.FestivalId, organizerId, ct);
 
         var csv = await BuildScheduleCsvAsync(editionId, ct);
-        var fileName = $"{SanitizeFilename(edition.Name)}_schedule_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name, "_schedule")}.csv";
         var data = Encoding.UTF8.GetBytes(csv);
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -112,7 +112,7 @@ public class ExportService : IExportService
         await EnsureOrganizerAccessAsync(edition.FestivalId, organizerId, ct);
 
         var csv = await BuildArtistsCsvAsync(editionId, ct);
-        var fileName = $"{SanitizeFilename(edition.Name)}_artists_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name, "_artists")}.csv";
         var data = Encoding.UTF8.GetBytes(csv);
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -127,7 +127,7 @@ public class ExportService : IExportService
         await EnsureOrganizerAccessAsync(edition.FestivalId, organizerId, ct);
 
         var csv = await BuildAnalyticsCsvAsync(editionId, fromUtc, toUtc, ct);
-        var fileName = $"{SanitizeFilename(edition.Name)}_analytics_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name, "_analytics")}.csv";
         var data = Encoding.UTF8.GetBytes(csv);
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -148,7 +148,7 @@ public class ExportService : IExportService
 
         if (topEngagements.Count == 0)
         {
-            var emptyFileName = $"{SanitizeFilename(edition.Name)}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+            var emptyFileName = $"{SanitizeFilename(edition.Name, "_attendee_saves")}.csv";
             var emptyData = Encoding.UTF8.GetBytes(sb.ToString());
             return new ExportResultDto(emptyFileName, "text/csv", emptyData);
         }
@@ -164,9 +164,20 @@ public class ExportService : IExportService
             engagementDictionary[engagement!.EngagementId] = engagement;
         }
 
+        // Validate data consistency - ensure all expected engagements were found
+        if (engagementDictionary.Count != engagementIds.Count)
+        {
+            var missingCount = engagementIds.Count - engagementDictionary.Count;
+            _logger.LogWarning(
+                "Data consistency issue detected: {MissingCount} engagements out of {TotalCount} were not found during export for edition {EditionId}",
+                missingCount,
+                engagementIds.Count,
+                editionId);
+        }
+
         if (engagementDictionary.Count == 0)
         {
-            var emptyFileName = $"{edition.Name.Replace(" ", "_")}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+            var emptyFileName = $"{SanitizeFilename(edition.Name, "_attendee_saves")}.csv";
             var emptyData = Encoding.UTF8.GetBytes(sb.ToString());
             return new ExportResultDto(emptyFileName, "text/csv", emptyData);
         }
@@ -182,6 +193,17 @@ public class ExportService : IExportService
             artistDictionary[artist.ArtistId] = artist;
         }
 
+        // Validate data consistency for artists
+        if (artistDictionary.Count != artistIds.Count)
+        {
+            var missingCount = artistIds.Count - artistDictionary.Count;
+            _logger.LogWarning(
+                "Data consistency issue detected: {MissingCount} artists out of {TotalCount} were not found during export for edition {EditionId}",
+                missingCount,
+                artistIds.Count,
+                editionId);
+        }
+
         // Batch fetch all time slots
         var timeSlotIds = engagementDictionary.Values.Select(e => e.TimeSlotId).Distinct().ToList();
         var timeSlotTasks = timeSlotIds.Select(id => _timeSlotRepository.GetByIdAsync(id, ct)).ToArray();
@@ -191,6 +213,17 @@ public class ExportService : IExportService
         foreach (var timeSlot in timeSlots.Where(t => t != null))
         {
             timeSlotDictionary[timeSlot!.TimeSlotId] = timeSlot;
+        }
+
+        // Validate data consistency for time slots
+        if (timeSlotDictionary.Count != timeSlotIds.Count)
+        {
+            var missingCount = timeSlotIds.Count - timeSlotDictionary.Count;
+            _logger.LogWarning(
+                "Data consistency issue detected: {MissingCount} time slots out of {TotalCount} were not found during export for edition {EditionId}",
+                missingCount,
+                timeSlotIds.Count,
+                editionId);
         }
 
         // Batch fetch all stages
@@ -206,6 +239,17 @@ public class ExportService : IExportService
         foreach (var stage in stages.Where(s => s != null))
         {
             stageDictionary[stage!.StageId] = stage;
+        }
+
+        // Validate data consistency for stages
+        if (stageDictionary.Count != stageIds.Count)
+        {
+            var missingCount = stageIds.Count - stageDictionary.Count;
+            _logger.LogWarning(
+                "Data consistency issue detected: {MissingCount} stages out of {TotalCount} were not found during export for edition {EditionId}",
+                missingCount,
+                stageIds.Count,
+                editionId);
         }
 
         // Build CSV lines
@@ -233,7 +277,7 @@ public class ExportService : IExportService
             sb.AppendLine(line);
         }
 
-        var fileName = $"{SanitizeFilename(edition.Name)}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name, "_attendee_saves")}.csv";
         var data = Encoding.UTF8.GetBytes(sb.ToString());
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -383,19 +427,20 @@ public class ExportService : IExportService
     }
 
     /// <summary>
-    /// Sanitizes a string for use in a filename by replacing invalid characters.
+    /// Sanitizes a string for use in a filename by replacing invalid characters and appending a unique suffix.
     /// </summary>
-    /// <param name="name">The name to sanitize.</param>
-    /// <returns>A sanitized filename-safe string.</returns>
-    private static string SanitizeFilename(string name)
+    /// <param name="name">The string to sanitize.</param>
+    /// <param name="suffix">Optional suffix to append (e.g., "_export", "_schedule").</param>
+    /// <returns>A safe filename with invalid characters replaced and a unique timestamp suffix appended.</returns>
+    private string SanitizeFilename(string name, string suffix = "")
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            return "export";
+            return $"export{suffix}_{_dateTimeProvider.UtcNow:yyyyMMddHHmmss}";
         }
 
         // Use Span<char> and string.Create for efficient character replacement
-        return string.Create(name.Length, name, (span, state) =>
+        var sanitized = string.Create(name.Length, name, (span, state) =>
         {
             state.AsSpan().CopyTo(span);
             for (int i = 0; i < span.Length; i++)
@@ -406,5 +451,8 @@ public class ExportService : IExportService
                 }
             }
         });
+
+        // Append suffix and timestamp to prevent filename collisions
+        return $"{sanitized}{suffix}_{_dateTimeProvider.UtcNow:yyyyMMddHHmmss}";
     }
 }

@@ -428,6 +428,12 @@ public class PermissionServiceTests
             .WithMessage("You do not have permission to invite users to this festival.");
     }
 
+    /// <summary>
+    /// Verifies that when email sending fails, the transaction is rolled back and the permission is not persisted.
+    /// This unit test verifies the transaction behavior with mocks.
+    /// Note: Consider adding an integration test that verifies the actual rollback behavior against a real database
+    /// to ensure the transaction pattern works correctly end-to-end.
+    /// </summary>
     [Fact]
     public async Task InviteUserAsync_WhenEmailSendingFails_RollsBackTransaction()
     {
