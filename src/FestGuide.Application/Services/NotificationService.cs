@@ -91,9 +91,9 @@ public class NotificationService : INotificationService
     }
 
     /// <inheritdoc />
-    public async Task UnregisterDeviceByTokenAsync(string token, CancellationToken ct = default)
+    public async Task UnregisterDeviceByTokenAsync(Guid userId, string token, CancellationToken ct = default)
     {
-        await _deviceTokenRepository.DeactivateByTokenAsync(token, SystemConstants.SystemUserId, ct).ConfigureAwait(false);
+        await _deviceTokenRepository.DeactivateByTokenAsync(token, userId, ct).ConfigureAwait(false);
     }
 
     #endregion

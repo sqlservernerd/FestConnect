@@ -185,13 +185,14 @@ public class NotificationServiceTests
     public async Task UnregisterDeviceByTokenAsync_DeactivatesByToken()
     {
         // Arrange
+        var userId = Guid.NewGuid();
         var token = "fcm-token-12345";
 
         // Act
-        await _sut.UnregisterDeviceByTokenAsync(token);
+        await _sut.UnregisterDeviceByTokenAsync(userId, token);
 
         // Assert
-        _mockDeviceTokenRepo.Verify(r => r.DeactivateByTokenAsync(token, It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockDeviceTokenRepo.Verify(r => r.DeactivateByTokenAsync(token, userId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion

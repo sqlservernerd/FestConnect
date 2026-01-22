@@ -44,9 +44,11 @@ public class DevicesController : BaseApiController
         var validation = await _registerValidator.ValidateAsync(request, ct);
         if (!validation.IsValid)
         {
+            _logger.LogWarning("Validation failed for registering device for user {UserId}", userId);
             return BadRequest(CreateValidationError(validation));
         }
 
+        _logger.LogInformation("Registering device for user {UserId} with platform {Platform}", userId, request.Platform);
         var device = await _notificationService.RegisterDeviceAsync(userId, request, ct);
 
         return CreatedAtAction(
@@ -62,6 +64,7 @@ public class DevicesController : BaseApiController
     public async Task<IActionResult> GetDevices(CancellationToken ct)
     {
         var userId = GetCurrentUserId();
+        _logger.LogDebug("Getting devices for user {UserId}", userId);
         var devices = await _notificationService.GetDevicesAsync(userId, ct);
         return Ok(ApiResponse<IReadOnlyList<DeviceTokenDto>>.Success(devices));
     }
@@ -78,11 +81,13 @@ public class DevicesController : BaseApiController
         var userId = GetCurrentUserId();
         try
         {
+            _logger.LogInformation("Unregistering device {DeviceId} for user {UserId}", deviceId, userId);
             await _notificationService.UnregisterDeviceAsync(userId, deviceId, ct);
             return NoContent();
         }
         catch (ForbiddenException ex)
         {
+            _logger.LogWarning(ex, "User {UserId} forbidden from unregistering device {DeviceId}", userId, deviceId);
             return StatusCode(StatusCodes.Status403Forbidden, CreateError("FORBIDDEN", ex.Message));
         }
     }
@@ -101,12 +106,15 @@ public class DevicesController : BaseApiController
     {
         if (string.IsNullOrWhiteSpace(token) || token.Length > 256)
         {
+            _logger.LogWarning("Invalid token parameter for unregister device by token");
             return BadRequest(CreateError(
                 "VALIDATION_ERROR",
                 "The 'token' query parameter is required and must be between 1 and 256 characters long."));
         }
 
-        await _notificationService.UnregisterDeviceByTokenAsync(token, ct);
+        var userId = GetCurrentUserId();
+        _logger.LogInformation("Unregistering device by token for user {UserId}", userId);
+        await _notificationService.UnregisterDeviceByTokenAsync(userId, token, ct);
         return NoContent();
     }
 

@@ -27,7 +27,7 @@ public interface INotificationService
     /// <summary>
     /// Unregisters a device by token.
     /// </summary>
-    Task UnregisterDeviceByTokenAsync(string token, CancellationToken ct = default);
+    Task UnregisterDeviceByTokenAsync(Guid userId, string token, CancellationToken ct = default);
 
     #endregion
 
