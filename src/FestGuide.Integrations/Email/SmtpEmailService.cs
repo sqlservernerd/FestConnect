@@ -21,6 +21,14 @@ public class SmtpEmailService : IEmailService
     {
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        // Validate that password is configured when email sending is enabled
+        if (_options.Enabled && string.IsNullOrWhiteSpace(_options.Password))
+        {
+            _logger.LogWarning(
+                "SMTP email sending is enabled but no password is configured. Email sending will fail. " +
+                "Configure the password using user secrets, environment variables, or a secure configuration provider.");
+        }
     }
 
     /// <inheritdoc />
@@ -145,11 +153,11 @@ public class SmtpEmailService : IEmailService
             await client.SendAsync(message, ct).ConfigureAwait(false);
             await client.DisconnectAsync(true, ct).ConfigureAwait(false);
 
-            _logger.LogInformation("Email sent successfully");
+            _logger.LogInformation("Email sent successfully to {ToAddress} with subject {Subject}", toAddress, subject);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email");
+            _logger.LogError(ex, "Failed to send email to {ToAddress} with subject {Subject}", toAddress, subject);
             throw;
         }
     }
