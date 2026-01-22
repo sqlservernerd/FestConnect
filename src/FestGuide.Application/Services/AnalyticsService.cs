@@ -229,8 +229,14 @@ public class AnalyticsService : IAnalyticsService
 
         if (missingArtistIds.Count > 0)
         {
+            _logger.LogError(
+                "Data integrity issue: Top artist analytics for edition {EditionId} references {MissingCount} missing artist entities. Missing IDs: {MissingArtistIds}",
+                editionId,
+                missingArtistIds.Count,
+                string.Join(", ", missingArtistIds));
+                
             throw new InvalidOperationException(
-                $"Artist entities not found for IDs: {string.Join(", ", missingArtistIds)}");
+                $"Unable to retrieve top artists analytics due to missing artist data. Please contact support.");
         }
 
         var result = new List<ArtistAnalyticsDto>();

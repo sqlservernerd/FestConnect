@@ -182,6 +182,7 @@ public class ScheduleService : IScheduleService
                 editionId,
                 userId,
                 schedule.Version);
+            throw;
         }
 
         return ScheduleDto.FromEntity(schedule);

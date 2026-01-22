@@ -365,6 +365,67 @@ public class ExportServiceTests
         var organizerId = Guid.NewGuid();
         var edition = CreateTestEdition(editionId, festivalId);
         var engagementId = Guid.NewGuid();
+        var artistId = Guid.NewGuid();
+        var timeSlotId = Guid.NewGuid();
+        var stageId = Guid.NewGuid();
+
+        var artist = new Artist
+        {
+            ArtistId = artistId,
+            FestivalId = festivalId,
+            Name = "Test Artist",
+            Genre = "Rock",
+            Bio = "Test bio",
+            ImageUrl = "https://example.com/image.jpg",
+            WebsiteUrl = "https://example.com",
+            SpotifyUrl = "https://spotify.com/artist/test",
+            IsDeleted = false,
+            CreatedAtUtc = _now,
+            CreatedBy = Guid.NewGuid(),
+            ModifiedAtUtc = _now,
+            ModifiedBy = Guid.NewGuid()
+        };
+
+        var stage = new Stage
+        {
+            StageId = stageId,
+            VenueId = Guid.NewGuid(),
+            Name = "Main Stage",
+            Description = "Main performance stage",
+            SortOrder = 1,
+            IsDeleted = false,
+            CreatedAtUtc = _now,
+            CreatedBy = Guid.NewGuid(),
+            ModifiedAtUtc = _now,
+            ModifiedBy = Guid.NewGuid()
+        };
+
+        var timeSlot = new TimeSlot
+        {
+            TimeSlotId = timeSlotId,
+            EditionId = editionId,
+            StageId = stageId,
+            StartTimeUtc = _now.AddDays(1),
+            EndTimeUtc = _now.AddDays(1).AddHours(1),
+            IsDeleted = false,
+            CreatedAtUtc = _now,
+            CreatedBy = Guid.NewGuid(),
+            ModifiedAtUtc = _now,
+            ModifiedBy = Guid.NewGuid()
+        };
+
+        var engagement = new Engagement
+        {
+            EngagementId = engagementId,
+            TimeSlotId = timeSlotId,
+            ArtistId = artistId,
+            Notes = null,
+            IsDeleted = false,
+            CreatedAtUtc = _now,
+            CreatedBy = Guid.NewGuid(),
+            ModifiedAtUtc = _now,
+            ModifiedBy = Guid.NewGuid()
+        };
 
         _mockEditionRepo.Setup(r => r.GetByIdAsync(editionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(edition);
@@ -373,7 +434,13 @@ public class ExportServiceTests
         _mockAnalyticsRepo.Setup(r => r.GetTopSavedEngagementsAsync(editionId, 100, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<(Guid, int)> { (engagementId, 42) });
         _mockEngagementRepo.Setup(r => r.GetByIdAsync(engagementId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Engagement?)null);
+            .ReturnsAsync(engagement);
+        _mockArtistRepo.Setup(r => r.GetByIdAsync(artistId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(artist);
+        _mockTimeSlotRepo.Setup(r => r.GetByIdAsync(timeSlotId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(timeSlot);
+        _mockStageRepo.Setup(r => r.GetByIdAsync(stageId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(stage);
 
         // Act
         var result = await _sut.ExportAttendeeSavesCsvAsync(editionId, organizerId);
@@ -384,6 +451,8 @@ public class ExportServiceTests
         result.ContentType.Should().Be("text/csv");
         var csvContent = System.Text.Encoding.UTF8.GetString(result.Data);
         csvContent.Should().Contain("EngagementId,ArtistName,StageName,StartTimeUtc,EndTimeUtc,SaveCount");
+        csvContent.Should().Contain("Test Artist");
+        csvContent.Should().Contain("Main Stage");
     }
 
     [Fact]

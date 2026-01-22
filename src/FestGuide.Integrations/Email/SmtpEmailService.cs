@@ -233,16 +233,14 @@ public class SmtpEmailService : IEmailService
 
     private string BuildUrl(string path)
     {
-        // BaseUrl is already validated at startup if email is enabled,
-        // but we keep this check as a defensive measure
-        var baseUrl = _options.BaseUrl?.TrimEnd('/');
-        
-        if (string.IsNullOrWhiteSpace(baseUrl))
+        // BaseUrl is validated at startup when email is enabled,
+        // but check here for defensive programming
+        if (string.IsNullOrWhiteSpace(_options.BaseUrl))
         {
-            throw new InvalidOperationException(
-                "BaseUrl is not configured in SmtpOptions. This should have been caught during service initialization.");
+            throw new InvalidOperationException("BaseUrl is not configured in SmtpOptions.");
         }
-
+        
+        var baseUrl = _options.BaseUrl.TrimEnd('/');
         return $"{baseUrl}/{path.TrimStart('/')}";
     }
 }

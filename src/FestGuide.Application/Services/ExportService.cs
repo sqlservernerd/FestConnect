@@ -13,7 +13,17 @@ namespace FestGuide.Application.Services;
 /// </summary>
 public class ExportService : IExportService
 {
-    private static readonly HashSet<char> InvalidFilenameChars = new(Path.GetInvalidFileNameChars()) { ' ' };
+    // Cache invalid filename characters as array for efficient IndexOfAny lookups
+    private static readonly char[] InvalidFilenameChars;
+    
+    static ExportService()
+    {
+        // Build array of invalid filename characters including space
+        var invalidChars = Path.GetInvalidFileNameChars();
+        InvalidFilenameChars = new char[invalidChars.Length + 1];
+        Array.Copy(invalidChars, InvalidFilenameChars, invalidChars.Length);
+        InvalidFilenameChars[invalidChars.Length] = ' ';
+    }
     
     private readonly IEditionRepository _editionRepository;
     private readonly ITimeSlotRepository _timeSlotRepository;
@@ -153,186 +163,208 @@ public class ExportService : IExportService
             return new ExportResultDto(emptyFileName, "text/csv", emptyData);
         }
 
-        // Batch fetch all engagements with error handling for individual failures
+        // Batch fetch all engagements - fail fast if any are missing
         var engagementIds = topEngagements.Select(e => e.EngagementId).ToList();
-        var engagementTasks = engagementIds.Select(async id =>
+        var engagementTasks = engagementIds.Select(id => _engagementRepository.GetByIdAsync(id, ct)).ToArray();
+        
+        Domain.Entities.Engagement?[] engagements;
+        try
         {
-            try
-            {
-                return await _engagementRepository.GetByIdAsync(id, ct);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to fetch engagement {EngagementId} during export for edition {EditionId}",
-                    id,
-                    editionId);
-                return null;
-            }
-        }).ToArray();
-        var engagements = await Task.WhenAll(engagementTasks);
+            engagements = await Task.WhenAll(engagementTasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to fetch engagement data during export for edition {EditionId}",
+                editionId);
+            throw new InvalidOperationException(
+                "Export failed due to missing engagement data. Please try again or contact support if the problem persists.",
+                ex);
+        }
         
         var engagementDictionary = new Dictionary<Guid, Domain.Entities.Engagement>();
-        foreach (var engagement in engagements.Where(e => e != null))
+        var missingEngagementIds = new List<Guid>();
+        
+        for (int i = 0; i < engagements.Length; i++)
         {
-            engagementDictionary[engagement!.EngagementId] = engagement;
+            var engagement = engagements[i];
+            if (engagement is null)
+            {
+                missingEngagementIds.Add(engagementIds[i]);
+            }
+            else
+            {
+                engagementDictionary[engagement.EngagementId] = engagement;
+            }
         }
 
-        // Validate data consistency - ensure all expected engagements were found
-        if (engagementDictionary.Count != engagementIds.Count)
+        if (missingEngagementIds.Count > 0)
         {
-            var missingCount = engagementIds.Count - engagementDictionary.Count;
-            _logger.LogWarning(
-                "Data consistency issue detected: {MissingCount} engagements out of {TotalCount} were not found during export for edition {EditionId}",
-                missingCount,
-                engagementIds.Count,
-                editionId);
+            _logger.LogError(
+                "Data integrity issue: Export for edition {EditionId} references {MissingCount} missing engagements. Missing IDs: {MissingIds}",
+                editionId,
+                missingEngagementIds.Count,
+                string.Join(", ", missingEngagementIds));
+            throw new InvalidOperationException(
+                "Export failed due to missing engagement data. Please contact support.");
         }
 
-        if (engagementDictionary.Count == 0)
-        {
-            var emptyFileName = $"{SanitizeFilename(edition.Name, "_attendee_saves")}.csv";
-            var emptyData = Encoding.UTF8.GetBytes(sb.ToString());
-            return new ExportResultDto(emptyFileName, "text/csv", emptyData);
-        }
-
-        // Batch fetch all artists with error handling for individual failures
+        // Batch fetch all artists - fail fast if any are missing
         var artistIds = engagementDictionary.Values.Select(e => e.ArtistId).Distinct().ToList();
-        var artistTasks = artistIds.Select(async id =>
+        var artistTasks = artistIds.Select(id => _artistRepository.GetByIdAsync(id, ct)).ToArray();
+        
+        Domain.Entities.Artist?[] artists;
+        try
         {
-            try
-            {
-                return await _artistRepository.GetByIdAsync(id, ct);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to fetch artist {ArtistId} during export for edition {EditionId}",
-                    id,
-                    editionId);
-                return null;
-            }
-        }).ToArray();
-        var artists = await Task.WhenAll(artistTasks);
+            artists = await Task.WhenAll(artistTasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to fetch artist data during export for edition {EditionId}",
+                editionId);
+            throw new InvalidOperationException(
+                "Export failed due to missing artist data. Please try again or contact support if the problem persists.",
+                ex);
+        }
         
         var artistDictionary = new Dictionary<Guid, Domain.Entities.Artist>();
-        foreach (var artist in artists.OfType<Domain.Entities.Artist>())
+        var missingArtistIds = new List<Guid>();
+        
+        for (int i = 0; i < artists.Length; i++)
         {
-            artistDictionary[artist.ArtistId] = artist;
+            var artist = artists[i];
+            if (artist is null)
+            {
+                missingArtistIds.Add(artistIds[i]);
+            }
+            else
+            {
+                artistDictionary[artist.ArtistId] = artist;
+            }
         }
 
-        // Validate data consistency for artists
-        if (artistDictionary.Count != artistIds.Count)
+        if (missingArtistIds.Count > 0)
         {
-            var missingCount = artistIds.Count - artistDictionary.Count;
-            _logger.LogWarning(
-                "Data consistency issue detected: {MissingCount} artists out of {TotalCount} were not found during export for edition {EditionId}",
-                missingCount,
-                artistIds.Count,
-                editionId);
+            _logger.LogError(
+                "Data integrity issue: Export for edition {EditionId} references {MissingCount} missing artists. Missing IDs: {MissingIds}",
+                editionId,
+                missingArtistIds.Count,
+                string.Join(", ", missingArtistIds));
+            throw new InvalidOperationException(
+                "Export failed due to missing artist data. Please contact support.");
         }
 
-        // Batch fetch all time slots with error handling for individual failures
+        // Batch fetch all time slots - fail fast if any are missing
         var timeSlotIds = engagementDictionary.Values.Select(e => e.TimeSlotId).Distinct().ToList();
-        var timeSlotTasks = timeSlotIds.Select(async id =>
+        var timeSlotTasks = timeSlotIds.Select(id => _timeSlotRepository.GetByIdAsync(id, ct)).ToArray();
+        
+        Domain.Entities.TimeSlot?[] timeSlots;
+        try
         {
-            try
-            {
-                return await _timeSlotRepository.GetByIdAsync(id, ct);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to fetch time slot {TimeSlotId} during export for edition {EditionId}",
-                    id,
-                    editionId);
-                return null;
-            }
-        }).ToArray();
-        var timeSlots = await Task.WhenAll(timeSlotTasks);
+            timeSlots = await Task.WhenAll(timeSlotTasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to fetch time slot data during export for edition {EditionId}",
+                editionId);
+            throw new InvalidOperationException(
+                "Export failed due to missing time slot data. Please try again or contact support if the problem persists.",
+                ex);
+        }
         
         var timeSlotDictionary = new Dictionary<Guid, Domain.Entities.TimeSlot>();
-        foreach (var timeSlot in timeSlots.Where(t => t != null))
-        {
-            timeSlotDictionary[timeSlot!.TimeSlotId] = timeSlot;
-        }
-
-        // Validate data consistency for time slots
-        if (timeSlotDictionary.Count != timeSlotIds.Count)
-        {
-            var missingCount = timeSlotIds.Count - timeSlotDictionary.Count;
-            _logger.LogWarning(
-                "Data consistency issue detected: {MissingCount} time slots out of {TotalCount} were not found during export for edition {EditionId}",
-                missingCount,
-                timeSlotIds.Count,
-                editionId);
-        }
-
-        // Batch fetch all stages with error handling for individual failures
-        var stageIds = timeSlots
-            .OfType<Domain.Entities.TimeSlot>()
-            .Select(ts => ts.StageId)
-            .ToHashSet();
+        var missingTimeSlotIds = new List<Guid>();
         
-        var stageTasks = stageIds.Select(async id =>
+        for (int i = 0; i < timeSlots.Length; i++)
         {
-            try
+            var timeSlot = timeSlots[i];
+            if (timeSlot is null)
             {
-                return await _stageRepository.GetByIdAsync(id, ct);
+                missingTimeSlotIds.Add(timeSlotIds[i]);
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(
-                    ex,
-                    "Failed to fetch stage {StageId} during export for edition {EditionId}",
-                    id,
-                    editionId);
-                return null;
+                timeSlotDictionary[timeSlot.TimeSlotId] = timeSlot;
             }
-        }).ToArray();
-        var stages = await Task.WhenAll(stageTasks);
+        }
+
+        if (missingTimeSlotIds.Count > 0)
+        {
+            _logger.LogError(
+                "Data integrity issue: Export for edition {EditionId} references {MissingCount} missing time slots. Missing IDs: {MissingIds}",
+                editionId,
+                missingTimeSlotIds.Count,
+                string.Join(", ", missingTimeSlotIds));
+            throw new InvalidOperationException(
+                "Export failed due to missing time slot data. Please contact support.");
+        }
+
+        // Batch fetch all stages - fail fast if any are missing
+        var stageIds = timeSlotDictionary.Values.Select(ts => ts.StageId).ToHashSet();
+        
+        var stageTasks = stageIds.Select(id => _stageRepository.GetByIdAsync(id, ct)).ToArray();
+        
+        Domain.Entities.Stage?[] stages;
+        try
+        {
+            stages = await Task.WhenAll(stageTasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to fetch stage data during export for edition {EditionId}",
+                editionId);
+            throw new InvalidOperationException(
+                "Export failed due to missing stage data. Please try again or contact support if the problem persists.",
+                ex);
+        }
         
         var stageDictionary = new Dictionary<Guid, Domain.Entities.Stage>();
-        foreach (var stage in stages.Where(s => s != null))
+        var missingStageIds = new List<Guid>();
+        var stageIdsList = stageIds.ToList();
+        
+        for (int i = 0; i < stages.Length; i++)
         {
-            stageDictionary[stage!.StageId] = stage;
+            var stage = stages[i];
+            if (stage is null)
+            {
+                missingStageIds.Add(stageIdsList[i]);
+            }
+            else
+            {
+                stageDictionary[stage.StageId] = stage;
+            }
         }
 
-        // Validate data consistency for stages
-        if (stageDictionary.Count != stageIds.Count)
+        if (missingStageIds.Count > 0)
         {
-            var missingCount = stageIds.Count - stageDictionary.Count;
-            _logger.LogWarning(
-                "Data consistency issue detected: {MissingCount} stages out of {TotalCount} were not found during export for edition {EditionId}",
-                missingCount,
-                stageIds.Count,
-                editionId);
+            _logger.LogError(
+                "Data integrity issue: Export for edition {EditionId} references {MissingCount} missing stages. Missing IDs: {MissingIds}",
+                editionId,
+                missingStageIds.Count,
+                string.Join(", ", missingStageIds));
+            throw new InvalidOperationException(
+                "Export failed due to missing stage data. Please contact support.");
         }
 
-        // Build CSV lines
+        // Build CSV lines - all data is guaranteed to exist at this point
         foreach (var item in topEngagements)
         {
             var (engagementId, saveCount) = item;
 
-            if (!engagementDictionary.TryGetValue(engagementId, out var engagement))
-            {
-                continue;
-            }
-
-            artistDictionary.TryGetValue(engagement.ArtistId, out var artist);
-            timeSlotDictionary.TryGetValue(engagement.TimeSlotId, out var timeSlot);
-
-            Domain.Entities.Stage? stage = null;
-            if (timeSlot != null)
-            {
-                stageDictionary.TryGetValue(timeSlot.StageId, out stage);
-            }
+            var engagement = engagementDictionary[engagementId];
+            var artist = artistDictionary[engagement.ArtistId];
+            var timeSlot = timeSlotDictionary[engagement.TimeSlotId];
+            var stage = stageDictionary[timeSlot.StageId];
 
             var line =
-                $"{engagementId},{EscapeCsv(artist?.Name)},{EscapeCsv(stage?.Name)},{timeSlot?.StartTimeUtc:o},{timeSlot?.EndTimeUtc:o},{saveCount}";
+                $"{engagementId},{EscapeCsv(artist.Name)},{EscapeCsv(stage.Name)},{timeSlot.StartTimeUtc:o},{timeSlot.EndTimeUtc:o},{saveCount}";
 
             sb.AppendLine(line);
         }
@@ -499,15 +531,22 @@ public class ExportService : IExportService
             return $"export{suffix}_{_dateTimeProvider.UtcNow:yyyyMMddHHmmss}";
         }
 
-        // Use Span<char> and string.Create for efficient character replacement
+        // Use IndexOfAny for fast character lookup instead of Contains
         var sanitized = string.Create(name.Length, name, (span, state) =>
         {
             state.AsSpan().CopyTo(span);
+            
+            // Replace invalid characters with underscore
             for (int i = 0; i < span.Length; i++)
             {
-                if (InvalidFilenameChars.Contains(span[i]))
+                // Direct array scan is faster than HashSet.Contains for small sets
+                for (int j = 0; j < InvalidFilenameChars.Length; j++)
                 {
-                    span[i] = '_';
+                    if (span[i] == InvalidFilenameChars[j])
+                    {
+                        span[i] = '_';
+                        break;
+                    }
                 }
             }
         });
