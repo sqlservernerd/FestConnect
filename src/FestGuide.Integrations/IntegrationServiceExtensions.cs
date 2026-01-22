@@ -3,6 +3,7 @@ using FestGuide.Infrastructure.Email;
 using FestGuide.Integrations.Email;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace FestGuide.Integrations;
 
@@ -34,9 +35,22 @@ public static class IntegrationServiceExtensions
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        // Email services - SMTP implementation
-        services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
-        services.AddScoped<IEmailService, SmtpEmailService>();
+        // Email services - SMTP implementation (only when enabled)
+        var smtpEnabled = configuration.GetValue<bool>("Smtp:Enabled", false);
+        if (smtpEnabled)
+        {
+            services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
+            services.AddScoped<IEmailService, SmtpEmailService>();
+        }
+        else
+        {
+            // Fallback to console email service for development when SMTP is disabled
+            var baseUrl = configuration["AppSettings:BaseUrl"] ?? "https://localhost:5001";
+            services.AddScoped<IEmailService>(sp =>
+                new Infrastructure.Email.ConsoleEmailService(
+                    sp.GetRequiredService<ILogger<Infrastructure.Email.ConsoleEmailService>>(),
+                    baseUrl));
+        }
 
         // Placeholder for future implementation:
         // - IWebhookService
