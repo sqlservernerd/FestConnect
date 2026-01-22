@@ -201,10 +201,10 @@ public class ExportService : IExportService
         }
 
         // Batch fetch all stages
-        var stageIds = new List<Guid>();
+        var stageIds = new HashSet<Guid>();
         foreach (var timeSlot in timeSlots)
         {
-            if (timeSlot != null && !stageIds.Contains(timeSlot.StageId))
+            if (timeSlot != null)
             {
                 stageIds.Add(timeSlot.StageId);
             }
@@ -296,10 +296,10 @@ public class ExportService : IExportService
         }
 
         // Batch fetch all artists
-        var artistIds = new List<Guid>();
+        var artistIds = new HashSet<Guid>();
         foreach (var engagement in engagements)
         {
-            if (engagement != null && !artistIds.Contains(engagement.ArtistId))
+            if (engagement != null)
             {
                 artistIds.Add(engagement.ArtistId);
             }

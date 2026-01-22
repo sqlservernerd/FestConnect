@@ -297,10 +297,10 @@ public class AnalyticsService : IAnalyticsService
         }
 
         // Batch fetch stages
-        var stageIds = new List<Guid>();
+        var stageIds = new HashSet<Guid>();
         foreach (var timeSlot in timeSlots)
         {
-            if (timeSlot != null && !stageIds.Contains(timeSlot.StageId))
+            if (timeSlot != null)
             {
                 stageIds.Add(timeSlot.StageId);
             }
@@ -481,10 +481,10 @@ public class AnalyticsService : IAnalyticsService
         }
 
         // Batch fetch all stages
-        var stageIds = new List<Guid>();
+        var stageIds = new HashSet<Guid>();
         foreach (var timeSlot in timeSlots)
         {
-            if (timeSlot != null && !stageIds.Contains(timeSlot.StageId))
+            if (timeSlot != null)
             {
                 stageIds.Add(timeSlot.StageId);
             }
