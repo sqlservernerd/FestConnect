@@ -60,6 +60,7 @@ public class ExportService : IExportService
     /// <inheritdoc />
     public async Task<ExportResultDto> ExportEditionDataAsync(Guid editionId, Guid organizerId, ExportRequest request, CancellationToken ct = default)
     {
+        ArgumentNullException.ThrowIfNull(request);
         var edition = await _editionRepository.GetByIdAsync(editionId, ct)
             ?? throw new EditionNotFoundException(editionId);
 
