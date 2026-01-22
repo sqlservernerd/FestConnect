@@ -13,6 +13,8 @@ namespace FestGuide.Application.Services;
 /// </summary>
 public class ExportService : IExportService
 {
+    private static readonly HashSet<char> InvalidFilenameChars = new(Path.GetInvalidFileNameChars()) { ' ' };
+    
     private readonly IEditionRepository _editionRepository;
     private readonly ITimeSlotRepository _timeSlotRepository;
     private readonly IEngagementRepository _engagementRepository;
@@ -78,7 +80,7 @@ public class ExportService : IExportService
             sb.AppendLine(analyticsCsv);
         }
 
-        var fileName = $"{edition.Name.Replace(" ", "_")}_export_{_dateTimeProvider.UtcNow:yyyyMMdd_HHmmss}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name)}_export_{_dateTimeProvider.UtcNow:yyyyMMdd_HHmmss}.csv";
         var data = Encoding.UTF8.GetBytes(sb.ToString());
 
         _logger.LogInformation("Export generated for edition {EditionId} by user {OrganizerId}", editionId, organizerId);
@@ -95,7 +97,7 @@ public class ExportService : IExportService
         await EnsureOrganizerAccessAsync(edition.FestivalId, organizerId, ct);
 
         var csv = await BuildScheduleCsvAsync(editionId, ct);
-        var fileName = $"{edition.Name.Replace(" ", "_")}_schedule_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name)}_schedule_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
         var data = Encoding.UTF8.GetBytes(csv);
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -110,7 +112,7 @@ public class ExportService : IExportService
         await EnsureOrganizerAccessAsync(edition.FestivalId, organizerId, ct);
 
         var csv = await BuildArtistsCsvAsync(editionId, ct);
-        var fileName = $"{edition.Name.Replace(" ", "_")}_artists_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name)}_artists_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
         var data = Encoding.UTF8.GetBytes(csv);
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -125,7 +127,7 @@ public class ExportService : IExportService
         await EnsureOrganizerAccessAsync(edition.FestivalId, organizerId, ct);
 
         var csv = await BuildAnalyticsCsvAsync(editionId, fromUtc, toUtc, ct);
-        var fileName = $"{edition.Name.Replace(" ", "_")}_analytics_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name)}_analytics_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
         var data = Encoding.UTF8.GetBytes(csv);
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -146,7 +148,7 @@ public class ExportService : IExportService
 
         if (topEngagements.Count == 0)
         {
-            var emptyFileName = $"{edition.Name.Replace(" ", "_")}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+            var emptyFileName = $"{SanitizeFilename(edition.Name)}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
             var emptyData = Encoding.UTF8.GetBytes(sb.ToString());
             return new ExportResultDto(emptyFileName, "text/csv", emptyData);
         }
@@ -231,7 +233,7 @@ public class ExportService : IExportService
             sb.AppendLine(line);
         }
 
-        var fileName = $"{edition.Name.Replace(" ", "_")}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
+        var fileName = $"{SanitizeFilename(edition.Name)}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
         var data = Encoding.UTF8.GetBytes(sb.ToString());
 
         return new ExportResultDto(fileName, "text/csv", data);
@@ -378,5 +380,31 @@ public class ExportService : IExportService
             return $"\"{value.Replace("\"", "\"\"")}\"";
         }
         return value;
+    }
+
+    /// <summary>
+    /// Sanitizes a string for use in a filename by replacing invalid characters.
+    /// </summary>
+    /// <param name="name">The name to sanitize.</param>
+    /// <returns>A sanitized filename-safe string.</returns>
+    private static string SanitizeFilename(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "export";
+        }
+
+        // Use Span<char> and string.Create for efficient character replacement
+        return string.Create(name.Length, name, (span, state) =>
+        {
+            state.AsSpan().CopyTo(span);
+            for (int i = 0; i < span.Length; i++)
+            {
+                if (InvalidFilenameChars.Contains(span[i]))
+                {
+                    span[i] = '_';
+                }
+            }
+        });
     }
 }

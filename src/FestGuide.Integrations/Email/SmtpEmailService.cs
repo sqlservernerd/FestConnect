@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text.Encodings.Web;
 using FestGuide.Infrastructure;
 using FestGuide.Infrastructure.Email;
@@ -113,7 +112,8 @@ public class SmtpEmailService : IEmailService
     /// <inheritdoc />
     public async Task SendInvitationEmailAsync(string toAddress, string festivalName, string inviterName, string role, bool isNewUser, CancellationToken ct = default)
     {
-        var subject = $"You've been invited to join {festivalName} on FestGuide";
+        var sanitizedFestivalNameForSubject = HtmlEncoder.Default.Encode(festivalName);
+        var subject = $"You've been invited to join {sanitizedFestivalNameForSubject} on FestGuide";
 
         var registerMessage = isNewUser
             ? "<p>To accept this invitation, you'll need to create a FestGuide account first. Once registered, you'll have access to the festival.</p>"
