@@ -147,37 +147,45 @@ public class SmtpEmailService : IEmailService
             return;
         }
 
-        using var message = new MimeMessage();
-        
-        var fromAddress = string.IsNullOrWhiteSpace(_options.FromAddress)
-            ? _options.Username
-            : _options.FromAddress;
-
-        message.From.Add(new MailboxAddress(_options.FromName, fromAddress));
-        message.To.Add(new MailboxAddress(string.Empty, toAddress));
-        message.Subject = subject;
-
-        var bodyBuilder = new BodyBuilder
+        try
         {
-            HtmlBody = htmlBody,
-            TextBody = plainTextBody
-        };
+            using var message = new MimeMessage();
+            
+            var fromAddress = string.IsNullOrWhiteSpace(_options.FromAddress)
+                ? _options.Username
+                : _options.FromAddress;
 
-        message.Body = bodyBuilder.ToMessageBody();
+            message.From.Add(new MailboxAddress(_options.FromName, fromAddress));
+            message.To.Add(new MailboxAddress(string.Empty, toAddress));
+            message.Subject = subject;
 
-        using var client = new SmtpClient();
-        
-        await client.ConnectAsync(_options.Host, _options.Port, _options.UseSsl, ct).ConfigureAwait(false);
-        
-        if (!string.IsNullOrWhiteSpace(_options.Username) && !string.IsNullOrWhiteSpace(_options.Password))
-        {
-            await client.AuthenticateAsync(_options.Username, _options.Password, ct).ConfigureAwait(false);
+            var bodyBuilder = new BodyBuilder
+            {
+                HtmlBody = htmlBody,
+                TextBody = plainTextBody
+            };
+
+            message.Body = bodyBuilder.ToMessageBody();
+
+            using var client = new SmtpClient();
+            
+            await client.ConnectAsync(_options.Host, _options.Port, _options.UseSsl, ct).ConfigureAwait(false);
+            
+            if (!string.IsNullOrWhiteSpace(_options.Username) && !string.IsNullOrWhiteSpace(_options.Password))
+            {
+                await client.AuthenticateAsync(_options.Username, _options.Password, ct).ConfigureAwait(false);
+            }
+
+            await client.SendAsync(message, ct).ConfigureAwait(false);
+            await client.DisconnectAsync(true, ct).ConfigureAwait(false);
+
+            _logger.LogInformation("Email sent successfully to {ToAddress} with subject {Subject}", toAddress, subject);
         }
-
-        await client.SendAsync(message, ct).ConfigureAwait(false);
-        await client.DisconnectAsync(true, ct).ConfigureAwait(false);
-
-        _logger.LogInformation("Email sent successfully to {ToAddress} with subject {Subject}", toAddress, subject);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email to {ToAddress} with subject {Subject}", toAddress, subject);
+            throw;
+        }
     }
 
     private static string BuildEmailTemplate(string title, string content)
