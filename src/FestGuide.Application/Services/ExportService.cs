@@ -142,32 +142,28 @@ public class ExportService : IExportService
         var sb = new StringBuilder();
         sb.AppendLine("EngagementId,ArtistName,StageName,StartTimeUtc,EndTimeUtc,SaveCount");
 
-        var topEngagements = await _analyticsRepository.GetTopSavedEngagementsAsync(editionId, 100, ct);
+        var topEngagements = await _analyticsRepository.GetTopSavedEngagementsAsync(editionId, 100, ct).ConfigureAwait(false);
 
-        var csvLinesTasks = topEngagements.Select(async item =>
+        foreach (var item in topEngagements)
         {
             var (engagementId, saveCount) = item;
 
             var engagement = await _engagementRepository.GetByIdAsync(engagementId, ct).ConfigureAwait(false);
-            if (engagement == null) return null;
+            if (engagement == null)
+            {
+                continue;
+            }
 
-            var artistTask = _artistRepository.GetByIdAsync(engagement.ArtistId, ct);
-            var timeSlotTask = _timeSlotRepository.GetByIdAsync(engagement.TimeSlotId, ct);
-
-            var artist = await artistTask.ConfigureAwait(false);
-            var timeSlot = await timeSlotTask.ConfigureAwait(false);
+            var artist = await _artistRepository.GetByIdAsync(engagement.ArtistId, ct).ConfigureAwait(false);
+            var timeSlot = await _timeSlotRepository.GetByIdAsync(engagement.TimeSlotId, ct).ConfigureAwait(false);
 
             var stage = timeSlot != null
                 ? await _stageRepository.GetByIdAsync(timeSlot.StageId, ct).ConfigureAwait(false)
                 : null;
 
-            return $"{engagementId},{EscapeCsv(artist?.Name)},{EscapeCsv(stage?.Name)},{timeSlot?.StartTimeUtc:o},{timeSlot?.EndTimeUtc:o},{saveCount}";
-        });
+            var line =
+                $"{engagementId},{EscapeCsv(artist?.Name)},{EscapeCsv(stage?.Name)},{timeSlot?.StartTimeUtc:o},{timeSlot?.EndTimeUtc:o},{saveCount}";
 
-        var csvLines = await Task.WhenAll(csvLinesTasks).ConfigureAwait(false);
-
-        foreach (var line in csvLines.Where(line => line != null))
-        {
             sb.AppendLine(line);
         }
 
@@ -182,30 +178,29 @@ public class ExportService : IExportService
         var sb = new StringBuilder();
         sb.AppendLine("TimeSlotId,StageId,StageName,StartTimeUtc,EndTimeUtc,ArtistId,ArtistName");
 
-        var timeSlots = await _timeSlotRepository.GetByEditionAsync(editionId, ct);
+        var timeSlots = await _timeSlotRepository.GetByEditionAsync(editionId, ct).ConfigureAwait(false);
 
-        var csvLinesTasks = timeSlots.OrderBy(t => t.StartTimeUtc).Select(async timeSlot =>
+        foreach (var timeSlot in timeSlots.OrderBy(t => t.StartTimeUtc))
         {
-            var stageTask = _stageRepository.GetByIdAsync(timeSlot.StageId, ct);
-            var engagementTask = _engagementRepository.GetByTimeSlotAsync(timeSlot.TimeSlotId, ct);
+            var stage = await _stageRepository
+                .GetByIdAsync(timeSlot.StageId, ct)
+                .ConfigureAwait(false);
 
-            var stage = await stageTask.ConfigureAwait(false);
-            var engagement = await engagementTask.ConfigureAwait(false);
+            var engagement = await _engagementRepository
+                .GetByTimeSlotAsync(timeSlot.TimeSlotId, ct)
+                .ConfigureAwait(false);
 
             if (engagement == null)
             {
-                return null;
+                continue;
             }
 
-            var artist = await _artistRepository.GetByIdAsync(engagement.ArtistId, ct).ConfigureAwait(false);
-            return $"{timeSlot.TimeSlotId},{timeSlot.StageId},{EscapeCsv(stage?.Name)},{timeSlot.StartTimeUtc:o},{timeSlot.EndTimeUtc:o},{engagement.ArtistId},{EscapeCsv(artist?.Name)}";
-        });
+            var artist = await _artistRepository
+                .GetByIdAsync(engagement.ArtistId, ct)
+                .ConfigureAwait(false);
 
-        var csvLines = await Task.WhenAll(csvLinesTasks).ConfigureAwait(false);
-
-        foreach (var line in csvLines.Where(line => line != null))
-        {
-            sb.AppendLine(line);
+            sb.AppendLine(
+                $"{timeSlot.TimeSlotId},{timeSlot.StageId},{EscapeCsv(stage?.Name)},{timeSlot.StartTimeUtc:o},{timeSlot.EndTimeUtc:o},{engagement.ArtistId},{EscapeCsv(artist?.Name)}");
         }
 
         return sb.ToString();

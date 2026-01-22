@@ -27,6 +27,8 @@ public class SmtpOptions
 
     /// <summary>
     /// Gets or sets the password for SMTP authentication.
+    /// This value is sensitive and must not be stored in source control or in appsettings.json.
+    /// Use secure configuration providers such as user secrets, environment variables, or a secret store.
     /// </summary>
     public string Password { get; set; } = string.Empty;
 

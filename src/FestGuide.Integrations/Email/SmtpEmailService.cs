@@ -115,7 +115,7 @@ public class SmtpEmailService : IEmailService
 
         try
         {
-            var message = new MimeMessage();
+            using var message = new MimeMessage();
             
             var fromAddress = string.IsNullOrWhiteSpace(_options.FromAddress)
                 ? _options.Username
