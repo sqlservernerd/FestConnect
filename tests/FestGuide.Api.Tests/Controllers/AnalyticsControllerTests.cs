@@ -43,8 +43,8 @@ public class AnalyticsControllerTests
             null,
             null,
             "iOS",
-            "Mobile",
-            Guid.NewGuid().ToString());
+            Guid.NewGuid().ToString(),
+            null);
 
         // Act
         var result = await _sut.TrackEvent(request, CancellationToken.None);
@@ -67,8 +67,8 @@ public class AnalyticsControllerTests
             null,
             null,
             "iOS",
-            "Mobile",
-            Guid.NewGuid().ToString());
+            Guid.NewGuid().ToString(),
+            null);
 
         // Act
         var result = await _sut.TrackEvent(request, CancellationToken.None);
@@ -94,8 +94,9 @@ public class AnalyticsControllerTests
             50,
             25,
             75,
-            new List<PlatformDistributionDto>(),
-            DateTime.UtcNow);
+            new List<TopArtistDto>(),
+            new List<TopEngagementDto>(),
+            new List<PlatformDistributionDto>());
 
         _mockAnalyticsService.Setup(s => s.GetEditionDashboardAsync(editionId, _userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(dashboard);
@@ -179,7 +180,8 @@ public class AnalyticsControllerTests
             3,
             500,
             100,
-            DateTime.UtcNow);
+            200,
+            new List<EditionMetricsSummaryDto>());
 
         _mockAnalyticsService.Setup(s => s.GetFestivalSummaryAsync(festivalId, _userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(summary);
@@ -266,7 +268,7 @@ public class AnalyticsControllerTests
         var editionId = Guid.NewGuid();
         var engagements = new List<EngagementAnalyticsDto>
         {
-            new(Guid.NewGuid(), Guid.NewGuid(), "Artist One", "Main Stage", DateTime.UtcNow, DateTime.UtcNow.AddHours(1), 50, 1)
+            new(Guid.NewGuid(), Guid.NewGuid(), "Artist One", Guid.NewGuid(), "Main Stage", DateTime.UtcNow, DateTime.UtcNow.AddHours(1), 50, 1)
         };
 
         _mockAnalyticsService.Setup(s => s.GetTopEngagementsAsync(editionId, _userId, 10, It.IsAny<CancellationToken>()))
