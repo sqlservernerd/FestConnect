@@ -175,9 +175,9 @@ public class AnalyticsService : IAnalyticsService
             return new EditionMetricsSummaryDto(
                 edition.EditionId,
                 edition.Name,
-                await viewsTask,
-                await schedulesTask,
-                await savesTask);
+                await viewsTask.ConfigureAwait(false),
+                await schedulesTask.ConfigureAwait(false),
+                await savesTask.ConfigureAwait(false));
         });
 
         var editionMetrics = await Task.WhenAll(editionMetricsTasks).ConfigureAwait(false);

@@ -1,9 +1,11 @@
 using System.Net;
-using System.Net.Mail;
+using System.Text.Encodings.Web;
 using FestGuide.Infrastructure;
 using FestGuide.Infrastructure.Email;
+using MailKit.Net.Smtp;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MimeKit;
 
 namespace FestGuide.Integrations.Email;
 
@@ -26,15 +28,16 @@ public class SmtpEmailService : IEmailService
     {
         var subject = "Verify your FestGuide account";
         var verificationUrl = BuildUrl($"verify-email?token={Uri.EscapeDataString(verificationToken)}");
+        var encodedDisplayName = HtmlEncoder.Default.Encode(displayName);
         var htmlBody = BuildEmailTemplate(
             "Verify Your Email",
-            $@"<p>Hi {displayName},</p>
+            $@"<p>Hi {encodedDisplayName},</p>
                <p>Please verify your email address by clicking the button below:</p>
                <p><a href=""{verificationUrl}"" style=""background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;"">Verify Email</a></p>
                <p>This link will expire in 24 hours.</p>
                <p>If you didn't create a FestGuide account, you can ignore this email.</p>");
 
-        await SendEmailAsync(email, subject, htmlBody, null, ct);
+        await SendEmailAsync(email, subject, htmlBody, null, ct).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -42,28 +45,30 @@ public class SmtpEmailService : IEmailService
     {
         var subject = "Reset your FestGuide password";
         var resetUrl = BuildUrl($"reset-password?token={Uri.EscapeDataString(resetToken)}");
+        var encodedDisplayName = HtmlEncoder.Default.Encode(displayName);
         var htmlBody = BuildEmailTemplate(
             "Reset Your Password",
-            $@"<p>Hi {displayName},</p>
+            $@"<p>Hi {encodedDisplayName},</p>
                <p>We received a request to reset your password. Click the button below to set a new password:</p>
                <p><a href=""{resetUrl}"" style=""background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;"">Reset Password</a></p>
                <p>This link will expire in 1 hour.</p>
                <p>If you didn't request a password reset, you can ignore this email.</p>");
 
-        await SendEmailAsync(email, subject, htmlBody, null, ct);
+        await SendEmailAsync(email, subject, htmlBody, null, ct).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task SendPasswordChangedNotificationAsync(string email, string displayName, CancellationToken ct = default)
     {
         var subject = "Your FestGuide password has been changed";
+        var encodedDisplayName = HtmlEncoder.Default.Encode(displayName);
         var htmlBody = BuildEmailTemplate(
             "Password Changed",
-            $@"<p>Hi {displayName},</p>
+            $@"<p>Hi {encodedDisplayName},</p>
                <p>Your password has been successfully changed.</p>
                <p>If you didn't make this change, please contact support immediately.</p>");
 
-        await SendEmailAsync(email, subject, htmlBody, null, ct);
+        await SendEmailAsync(email, subject, htmlBody, null, ct).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -75,10 +80,14 @@ public class SmtpEmailService : IEmailService
             ? "<p>To accept this invitation, you'll need to create a FestGuide account first. Once registered, you'll have access to the festival.</p>"
             : "<p>Log in to your FestGuide account to access the festival.</p>";
 
+        var encodedFestivalName = HtmlEncoder.Default.Encode(festivalName);
+        var encodedInviterName = HtmlEncoder.Default.Encode(inviterName);
+        var encodedRole = HtmlEncoder.Default.Encode(role);
+
         var htmlBody = BuildEmailTemplate(
             "You're Invited!",
-            $@"<p><strong>{inviterName}</strong> has invited you to join <strong>{festivalName}</strong> as a team member.</p>
-               <p>Your role: <span style=""display: inline-block; background-color: #6366f1; color: white; padding: 4px 12px; border-radius: 4px; font-size: 14px;"">{role}</span></p>
+            $@"<p><strong>{encodedInviterName}</strong> has invited you to join <strong>{encodedFestivalName}</strong> as a team member.</p>
+               <p>Your role: <span style=""display: inline-block; background-color: #6366f1; color: white; padding: 4px 12px; border-radius: 4px; font-size: 14px;"">{encodedRole}</span></p>
                {registerMessage}
                <p>With FestGuide, you can:</p>
                <ul>
@@ -87,7 +96,7 @@ public class SmtpEmailService : IEmailService
                    <li>Track attendee engagement</li>
                </ul>");
 
-        await SendEmailAsync(toAddress, subject, htmlBody, null, ct);
+        await SendEmailAsync(toAddress, subject, htmlBody, null, ct).ConfigureAwait(false);
     }
 
     private async Task SendEmailAsync(string toAddress, string subject, string htmlBody, string? plainTextBody, CancellationToken ct)
@@ -106,28 +115,35 @@ public class SmtpEmailService : IEmailService
 
         try
         {
-            using var client = new SmtpClient(_options.Host, _options.Port)
-            {
-                Credentials = new NetworkCredential(_options.Username, _options.Password),
-                EnableSsl = _options.UseSsl,
-                DeliveryMethod = SmtpDeliveryMethod.Network
-            };
-
+            var message = new MimeMessage();
+            
             var fromAddress = string.IsNullOrWhiteSpace(_options.FromAddress)
                 ? _options.Username
                 : _options.FromAddress;
 
-            using var message = new MailMessage
+            message.From.Add(new MailboxAddress(_options.FromName, fromAddress));
+            message.To.Add(new MailboxAddress(string.Empty, toAddress));
+            message.Subject = subject;
+
+            var bodyBuilder = new BodyBuilder
             {
-                From = new MailAddress(fromAddress, _options.FromName),
-                Subject = subject,
-                Body = htmlBody,
-                IsBodyHtml = true
+                HtmlBody = htmlBody,
+                TextBody = plainTextBody
             };
 
-            message.To.Add(new MailAddress(toAddress));
+            message.Body = bodyBuilder.ToMessageBody();
 
-            await client.SendMailAsync(message, ct);
+            using var client = new SmtpClient();
+            
+            await client.ConnectAsync(_options.Host, _options.Port, _options.UseSsl, ct).ConfigureAwait(false);
+            
+            if (!string.IsNullOrWhiteSpace(_options.Username) && !string.IsNullOrWhiteSpace(_options.Password))
+            {
+                await client.AuthenticateAsync(_options.Username, _options.Password, ct).ConfigureAwait(false);
+            }
+
+            await client.SendAsync(message, ct).ConfigureAwait(false);
+            await client.DisconnectAsync(true, ct).ConfigureAwait(false);
 
             _logger.LogInformation("Email sent successfully to {ToAddress} with subject: {Subject}", toAddress, subject);
         }
