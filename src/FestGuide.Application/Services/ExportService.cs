@@ -530,7 +530,6 @@ public class ExportService : IExportService
             return $"export{suffix}_{_dateTimeProvider.UtcNow:yyyyMMddHHmmss}";
         }
 
-        // Use IndexOfAny for fast character lookup instead of Contains
         // Use IndexOfAny for efficient character lookup
         var sanitized = string.Create(name.Length, name, (span, state) =>
         {
