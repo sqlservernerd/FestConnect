@@ -32,6 +32,8 @@ public static class IntegrationServiceExtensions
     /// </returns>
     public static IServiceCollection AddIntegrationServices(this IServiceCollection services, IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(configuration);
+
         // Email services - SMTP implementation
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
         services.AddScoped<IEmailService, SmtpEmailService>();

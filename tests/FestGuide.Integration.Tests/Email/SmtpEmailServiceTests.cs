@@ -87,7 +87,7 @@ public class SmtpEmailServiceTests
             x => x.Log(
                 LogLevel.Debug,
                 It.IsAny<EventId>(),
-                It.IsAny<It.IsAnyType>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Email sending is disabled")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
