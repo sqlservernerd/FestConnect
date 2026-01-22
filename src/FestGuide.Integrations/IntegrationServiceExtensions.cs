@@ -45,7 +45,13 @@ public static class IntegrationServiceExtensions
         else
         {
             // Fallback to console email service for development when SMTP is disabled
-            var baseUrl = configuration["AppSettings:BaseUrl"] ?? "https://localhost:5001";
+            var baseUrl = configuration["AppSettings:BaseUrl"];
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                // Use localhost as default for development environments
+                baseUrl = "https://localhost:5001";
+            }
+            
             services.AddScoped<IEmailService>(sp =>
                 new Infrastructure.Email.ConsoleEmailService(
                     sp.GetRequiredService<ILogger<Infrastructure.Email.ConsoleEmailService>>(),
