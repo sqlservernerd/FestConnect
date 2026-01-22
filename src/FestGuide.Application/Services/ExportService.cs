@@ -305,9 +305,9 @@ public class ExportService : IExportService
         }
 
         // Batch fetch all stages - fail fast if any are missing
-        var stageIds = timeSlotDictionary.Values.Select(ts => ts.StageId).ToHashSet();
+        var stageIdsList = timeSlotDictionary.Values.Select(ts => ts.StageId).Distinct().ToList();
         
-        var stageTasks = stageIds.Select(id => _stageRepository.GetByIdAsync(id, ct)).ToArray();
+        var stageTasks = stageIdsList.Select(id => _stageRepository.GetByIdAsync(id, ct)).ToArray();
         
         Domain.Entities.Stage?[] stages;
         try
@@ -327,7 +327,6 @@ public class ExportService : IExportService
         
         var stageDictionary = new Dictionary<Guid, Domain.Entities.Stage>();
         var missingStageIds = new List<Guid>();
-        var stageIdsList = stageIds.ToList();
         
         for (int i = 0; i < stages.Length; i++)
         {
@@ -532,22 +531,22 @@ public class ExportService : IExportService
         }
 
         // Use IndexOfAny for fast character lookup instead of Contains
+        // Use IndexOfAny for efficient character lookup
         var sanitized = string.Create(name.Length, name, (span, state) =>
         {
             state.AsSpan().CopyTo(span);
             
-            // Replace invalid characters with underscore
-            for (int i = 0; i < span.Length; i++)
+            // Replace invalid characters with underscore using optimized IndexOfAny
+            int pos = 0;
+            while (pos < span.Length)
             {
-                // Direct array scan is faster than HashSet.Contains for small sets
-                for (int j = 0; j < InvalidFilenameChars.Length; j++)
+                int invalidIndex = span.Slice(pos).IndexOfAny(InvalidFilenameChars);
+                if (invalidIndex == -1)
                 {
-                    if (span[i] == InvalidFilenameChars[j])
-                    {
-                        span[i] = '_';
-                        break;
-                    }
+                    break;
                 }
+                span[pos + invalidIndex] = '_';
+                pos += invalidIndex + 1;
             }
         });
 
