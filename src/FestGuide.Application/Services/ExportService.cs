@@ -166,9 +166,9 @@ public class ExportService : IExportService
 
         var csvLines = await Task.WhenAll(csvLinesTasks).ConfigureAwait(false);
 
-        foreach (var line in csvLines)
+        foreach (var line in csvLines.Where(line => line != null))
         {
-            if (line != null) sb.AppendLine(line);
+            sb.AppendLine(line);
         }
 
         var fileName = $"{edition.Name.Replace(" ", "_")}_attendee_saves_{_dateTimeProvider.UtcNow:yyyyMMdd}.csv";
@@ -203,9 +203,9 @@ public class ExportService : IExportService
 
         var csvLines = await Task.WhenAll(csvLinesTasks).ConfigureAwait(false);
 
-        foreach (var line in csvLines)
+        foreach (var line in csvLines.Where(line => line != null))
         {
-            if (line != null) sb.AppendLine(line);
+            sb.AppendLine(line);
         }
 
         return sb.ToString();

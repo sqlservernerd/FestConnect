@@ -47,5 +47,7 @@
     <!-- Other -->
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="AutoMapper" Version="13.0.1" />
+    <!-- Email -->
+    <PackageVersion Include="MailKit" Version="4.9.0" />
   </ItemGroup>
 </Project>

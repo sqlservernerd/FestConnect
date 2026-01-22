@@ -439,7 +439,7 @@ public class SmtpEmailServiceTests
         var email = "user@example.com";
         var displayName = "Test User";
         var verificationToken = "abc123";
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         cts.Cancel();
 
         // Act - When disabled, cancellation doesn't matter
