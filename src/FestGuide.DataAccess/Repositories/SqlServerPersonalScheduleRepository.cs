@@ -93,11 +93,11 @@ public class SqlServerPersonalScheduleRepository : IPersonalScheduleRepository
     {
         const string sql = """
             INSERT INTO attendee.PersonalSchedule (
-                PersonalScheduleId, UserId, EditionId, Name, IsDefault,
+                UserId, EditionId, Name, IsDefault,
                 LastSyncedAtUtc, IsDeleted, DeletedAtUtc,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @PersonalScheduleId, @UserId, @EditionId, @Name, @IsDefault,
+                @UserId, @EditionId, @Name, @IsDefault,
                 @LastSyncedAtUtc, @IsDeleted, @DeletedAtUtc,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
@@ -224,11 +224,11 @@ public class SqlServerPersonalScheduleRepository : IPersonalScheduleRepository
     {
         const string sql = """
             INSERT INTO attendee.PersonalScheduleEntry (
-                PersonalScheduleEntryId, PersonalScheduleId, EngagementId, Notes,
+                PersonalScheduleId, EngagementId, Notes,
                 NotificationsEnabled, IsDeleted, DeletedAtUtc,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @PersonalScheduleEntryId, @PersonalScheduleId, @EngagementId, @Notes,
+                @PersonalScheduleId, @EngagementId, @Notes,
                 @NotificationsEnabled, @IsDeleted, @DeletedAtUtc,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )

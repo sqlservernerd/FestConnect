@@ -120,10 +120,10 @@ public class SqlServerFestivalRepository : IFestivalRepository
     {
         const string sql = """
             INSERT INTO core.Festival (
-                FestivalId, Name, Description, ImageUrl, WebsiteUrl,
+                Name, Description, ImageUrl, WebsiteUrl,
                 OwnerUserId, IsDeleted, CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @FestivalId, @Name, @Description, @ImageUrl, @WebsiteUrl,
+                @Name, @Description, @ImageUrl, @WebsiteUrl,
                 @OwnerUserId, @IsDeleted, @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
             """;

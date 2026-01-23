@@ -22,11 +22,11 @@ public class SqlServerAnalyticsRepository : IAnalyticsRepository
     {
         const string sql = """
             INSERT INTO analytics.AnalyticsEvent (
-                AnalyticsEventId, UserId, FestivalId, EditionId, EventType,
+                UserId, FestivalId, EditionId, EventType,
                 EntityType, EntityId, Metadata, Platform, DeviceType,
                 SessionId, EventTimestampUtc, CreatedAtUtc
             ) VALUES (
-                @AnalyticsEventId, @UserId, @FestivalId, @EditionId, @EventType,
+                @UserId, @FestivalId, @EditionId, @EventType,
                 @EntityType, @EntityId, @Metadata, @Platform, @DeviceType,
                 @SessionId, @EventTimestampUtc, @CreatedAtUtc
             )
@@ -44,11 +44,11 @@ public class SqlServerAnalyticsRepository : IAnalyticsRepository
         ArgumentNullException.ThrowIfNull(events);
         const string sql = """
             INSERT INTO analytics.AnalyticsEvent (
-                AnalyticsEventId, UserId, FestivalId, EditionId, EventType,
+                UserId, FestivalId, EditionId, EventType,
                 EntityType, EntityId, Metadata, Platform, DeviceType,
                 SessionId, EventTimestampUtc, CreatedAtUtc
             ) VALUES (
-                @AnalyticsEventId, @UserId, @FestivalId, @EditionId, @EventType,
+                @UserId, @FestivalId, @EditionId, @EventType,
                 @EntityType, @EntityId, @Metadata, @Platform, @DeviceType,
                 @SessionId, @EventTimestampUtc, @CreatedAtUtc
             )

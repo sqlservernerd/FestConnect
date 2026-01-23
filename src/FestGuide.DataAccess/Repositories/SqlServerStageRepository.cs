@@ -102,10 +102,10 @@ public class SqlServerStageRepository : IStageRepository
     {
         const string sql = """
             INSERT INTO venue.Stage (
-                StageId, VenueId, Name, Description, SortOrder, IsDeleted,
+                VenueId, Name, Description, SortOrder, IsDeleted,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @StageId, @VenueId, @Name, @Description, @SortOrder, @IsDeleted,
+                @VenueId, @Name, @Description, @SortOrder, @IsDeleted,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
             """;

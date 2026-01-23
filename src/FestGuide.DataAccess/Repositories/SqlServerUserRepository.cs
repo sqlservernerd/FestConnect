@@ -95,11 +95,11 @@ public class SqlServerUserRepository : IUserRepository
     {
         const string sql = """
             INSERT INTO identity.[User] (
-                UserId, Email, EmailNormalized, EmailVerified, PasswordHash,
+                Email, EmailNormalized, EmailVerified, PasswordHash,
                 DisplayName, UserType, PreferredTimezoneId, IsDeleted,
                 FailedLoginAttempts, CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @UserId, @Email, @EmailNormalized, @EmailVerified, @PasswordHash,
+                @Email, @EmailNormalized, @EmailVerified, @PasswordHash,
                 @DisplayName, @UserType, @PreferredTimezoneId, @IsDeleted,
                 @FailedLoginAttempts, @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )

@@ -77,11 +77,11 @@ public class SqlServerVenueRepository : IVenueRepository
     {
         const string sql = """
             INSERT INTO venue.Venue (
-                VenueId, FestivalId, Name, Description, Address,
+                FestivalId, Name, Description, Address,
                 Latitude, Longitude, IsDeleted,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @VenueId, @FestivalId, @Name, @Description, @Address,
+                @FestivalId, @Name, @Description, @Address,
                 @Latitude, @Longitude, @IsDeleted,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
@@ -159,13 +159,13 @@ public class SqlServerVenueRepository : IVenueRepository
     public async Task AddToEditionAsync(long editionId, long venueId, long createdBy, CancellationToken ct = default)
     {
         const string sql = """
-            INSERT INTO venue.EditionVenue (EditionVenueId, EditionId, VenueId, CreatedAtUtc, CreatedBy)
-            VALUES (@EditionVenueId, @EditionId, @VenueId, @CreatedAtUtc, @CreatedBy)
+            INSERT INTO venue.EditionVenue (EditionId, VenueId, CreatedAtUtc, CreatedBy)
+            VALUES (@EditionId, @VenueId, @CreatedAtUtc, @CreatedBy)
             """;
 
         await _connection.ExecuteAsync(new CommandDefinition(
             sql,
-            new { EditionVenueId = 0L, EditionId = editionId, VenueId = venueId, CreatedAtUtc = DateTime.UtcNow, CreatedBy = createdBy },
+            new { EditionId = editionId, VenueId = venueId, CreatedAtUtc = DateTime.UtcNow, CreatedBy = createdBy },
             cancellationToken: ct));
     }
 

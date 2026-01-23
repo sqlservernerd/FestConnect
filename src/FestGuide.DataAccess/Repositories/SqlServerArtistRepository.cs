@@ -104,11 +104,11 @@ public class SqlServerArtistRepository : IArtistRepository
     {
         const string sql = """
             INSERT INTO core.Artist (
-                ArtistId, FestivalId, Name, Genre, Bio,
+                FestivalId, Name, Genre, Bio,
                 ImageUrl, WebsiteUrl, SpotifyUrl, IsDeleted,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @ArtistId, @FestivalId, @Name, @Genre, @Bio,
+                @FestivalId, @Name, @Genre, @Bio,
                 @ImageUrl, @WebsiteUrl, @SpotifyUrl, @IsDeleted,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )

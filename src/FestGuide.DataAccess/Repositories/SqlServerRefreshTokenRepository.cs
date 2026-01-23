@@ -54,10 +54,10 @@ public class SqlServerRefreshTokenRepository : IRefreshTokenRepository
     {
         const string sql = """
             INSERT INTO identity.RefreshToken (
-                RefreshTokenId, UserId, TokenHash, ExpiresAtUtc, IsRevoked,
+                UserId, TokenHash, ExpiresAtUtc, IsRevoked,
                 CreatedAtUtc, CreatedByIp
             ) VALUES (
-                @RefreshTokenId, @UserId, @TokenHash, @ExpiresAtUtc, @IsRevoked,
+                @UserId, @TokenHash, @ExpiresAtUtc, @IsRevoked,
                 @CreatedAtUtc, @CreatedByIp
             )
             """;

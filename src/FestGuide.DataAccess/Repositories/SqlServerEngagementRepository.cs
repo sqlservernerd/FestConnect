@@ -116,10 +116,10 @@ public class SqlServerEngagementRepository : IEngagementRepository
     {
         const string sql = """
             INSERT INTO schedule.Engagement (
-                EngagementId, TimeSlotId, ArtistId, Notes, IsDeleted,
+                TimeSlotId, ArtistId, Notes, IsDeleted,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @EngagementId, @TimeSlotId, @ArtistId, @Notes, @IsDeleted,
+                @TimeSlotId, @ArtistId, @Notes, @IsDeleted,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
             """;
