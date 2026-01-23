@@ -7,12 +7,12 @@ CREATE TABLE [audit].[AuditLog]
     [AuditLogId]            BIGINT IDENTITY(1,1)    NOT NULL,
     [TableSchema]           NVARCHAR(128)           NOT NULL,
     [TableName]             NVARCHAR(128)           NOT NULL,
-    [RecordId]              UNIQUEIDENTIFIER        NOT NULL,
+    [RecordId]              BIGINT                  NOT NULL,
     [Action]                NVARCHAR(10)            NOT NULL,   -- 'INSERT', 'UPDATE', 'DELETE'
     [OldValues]             NVARCHAR(MAX)           NULL,       -- JSON of old values (for UPDATE/DELETE)
     [NewValues]             NVARCHAR(MAX)           NULL,       -- JSON of new values (for INSERT/UPDATE)
     [ChangedColumns]        NVARCHAR(MAX)           NULL,       -- JSON array of changed column names (for UPDATE)
-    [UserId]                UNIQUEIDENTIFIER        NULL,
+    [UserId]                BIGINT                  NULL,
     [UserEmail]             NVARCHAR(256)           NULL,       -- Denormalized for audit independence
     [IpAddress]             NVARCHAR(45)            NULL,
     [UserAgent]             NVARCHAR(500)           NULL,

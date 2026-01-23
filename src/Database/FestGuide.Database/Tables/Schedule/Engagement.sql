@@ -4,16 +4,16 @@
 -- =======================================================
 CREATE TABLE [schedule].[Engagement]
 (
-    [EngagementId]          UNIQUEIDENTIFIER    NOT NULL,
-    [TimeSlotId]            UNIQUEIDENTIFIER    NOT NULL,
-    [ArtistId]              UNIQUEIDENTIFIER    NOT NULL,
-    [Notes]                 NVARCHAR(MAX)       NULL,
-    [IsDeleted]             BIT                 NOT NULL    CONSTRAINT [DF_Engagement_IsDeleted] DEFAULT (0),
-    [DeletedAtUtc]          DATETIME2(7)        NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_Engagement_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedBy]             UNIQUEIDENTIFIER    NULL,
-    [ModifiedAtUtc]         DATETIME2(7)        NOT NULL    CONSTRAINT [DF_Engagement_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [ModifiedBy]            UNIQUEIDENTIFIER    NULL,
+    [EngagementId]          BIGINT IDENTITY(1,1)    NOT NULL,
+    [TimeSlotId]            BIGINT                  NOT NULL,
+    [ArtistId]              BIGINT                  NOT NULL,
+    [Notes]                 NVARCHAR(MAX)           NULL,
+    [IsDeleted]             BIT                     NOT NULL    CONSTRAINT [DF_Engagement_IsDeleted] DEFAULT (0),
+    [DeletedAtUtc]          DATETIME2(7)            NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_Engagement_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedBy]             BIGINT                  NULL,
+    [ModifiedAtUtc]         DATETIME2(7)            NOT NULL    CONSTRAINT [DF_Engagement_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [ModifiedBy]            BIGINT                  NULL,
 
     CONSTRAINT [PK_Engagement] PRIMARY KEY CLUSTERED ([EngagementId]),
     CONSTRAINT [FK_Engagement_TimeSlot] FOREIGN KEY ([TimeSlotId]) REFERENCES [venue].[TimeSlot]([TimeSlotId]),

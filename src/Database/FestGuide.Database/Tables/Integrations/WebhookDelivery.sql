@@ -4,17 +4,17 @@
 -- =======================================================
 CREATE TABLE [integrations].[WebhookDelivery]
 (
-    [WebhookDeliveryId]     UNIQUEIDENTIFIER    NOT NULL,
-    [WebhookSubscriptionId] UNIQUEIDENTIFIER    NULL,
-    [EventType]             NVARCHAR(100)       NOT NULL,   -- 'schedule.published', 'artist.updated', etc.
-    [Payload]               NVARCHAR(MAX)       NOT NULL,   -- JSON payload sent
-    [ResponseStatusCode]    INT                 NULL,
-    [ResponseBody]          NVARCHAR(MAX)       NULL,
-    [IsSuccess]             BIT                 NOT NULL    CONSTRAINT [DF_WebhookDelivery_IsSuccess] DEFAULT (0),
-    [ErrorMessage]          NVARCHAR(500)       NULL,
-    [AttemptNumber]         INT                 NOT NULL    CONSTRAINT [DF_WebhookDelivery_AttemptNumber] DEFAULT (1),
-    [DurationMs]            INT                 NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_WebhookDelivery_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [WebhookDeliveryId]     BIGINT IDENTITY(1,1)    NOT NULL,
+    [WebhookSubscriptionId] BIGINT                  NULL,
+    [EventType]             NVARCHAR(100)           NOT NULL,   -- 'schedule.published', 'artist.updated', etc.
+    [Payload]               NVARCHAR(MAX)           NOT NULL,   -- JSON payload sent
+    [ResponseStatusCode]    INT                     NULL,
+    [ResponseBody]          NVARCHAR(MAX)           NULL,
+    [IsSuccess]             BIT                     NOT NULL    CONSTRAINT [DF_WebhookDelivery_IsSuccess] DEFAULT (0),
+    [ErrorMessage]          NVARCHAR(500)           NULL,
+    [AttemptNumber]         INT                     NOT NULL    CONSTRAINT [DF_WebhookDelivery_AttemptNumber] DEFAULT (1),
+    [DurationMs]            INT                     NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_WebhookDelivery_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
 
     CONSTRAINT [PK_WebhookDelivery] PRIMARY KEY CLUSTERED ([WebhookDeliveryId]),
     CONSTRAINT [FK_WebhookDelivery_WebhookSubscription] FOREIGN KEY ([WebhookSubscriptionId]) REFERENCES [integrations].[WebhookSubscription]([WebhookSubscriptionId]) ON DELETE SET NULL

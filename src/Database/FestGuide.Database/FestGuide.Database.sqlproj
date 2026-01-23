@@ -11,6 +11,8 @@
     <DefaultSchema>core</DefaultSchema>
     <GenerateCreateScript>True</GenerateCreateScript>
     <IncludeCompositeObjects>True</IncludeCompositeObjects>
+    <!-- Disable auto-discovery to use explicit build order -->
+    <EnableDefaultSqlItems>false</EnableDefaultSqlItems>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -32,6 +34,67 @@
     <Folder Include="Tables\Integrations" />
     <Folder Include="Tables\Audit" />
     <Folder Include="PostDeployment" />
+  </ItemGroup>
+
+  <!-- Explicitly include schema files first to ensure schemas are created before dependent objects -->
+  <ItemGroup>
+    <Build Include="Schemas\analytics.sql" />
+    <Build Include="Schemas\attendee.sql" />
+    <Build Include="Schemas\audit.sql" />
+    <Build Include="Schemas\core.sql" />
+    <Build Include="Schemas\identity.sql" />
+    <Build Include="Schemas\integrations.sql" />
+    <Build Include="Schemas\notifications.sql" />
+    <Build Include="Schemas\permissions.sql" />
+    <Build Include="Schemas\schedule.sql" />
+    <Build Include="Schemas\venue.sql" />
+  </ItemGroup>
+
+  <!-- Include table files after schemas -->
+  <ItemGroup>
+    <!-- Identity tables (base) -->
+    <Build Include="Tables\Identity\User.sql" />
+    <Build Include="Tables\Identity\EmailVerificationToken.sql" />
+    <Build Include="Tables\Identity\PasswordResetToken.sql" />
+    <Build Include="Tables\Identity\RefreshToken.sql" />
+    
+    <!-- Core tables -->
+    <Build Include="Tables\Core\Festival.sql" />
+    <Build Include="Tables\Core\FestivalEdition.sql" />
+    <Build Include="Tables\Core\Artist.sql" />
+    
+    <!-- Venue tables -->
+    <Build Include="Tables\Venue\Venue.sql" />
+    <Build Include="Tables\Venue\Stage.sql" />
+    <Build Include="Tables\Venue\EditionVenue.sql" />
+    <Build Include="Tables\Venue\TimeSlot.sql" />
+    
+    <!-- Schedule tables -->
+    <Build Include="Tables\Schedule\Schedule.sql" />
+    <Build Include="Tables\Schedule\Engagement.sql" />
+    
+    <!-- Attendee tables -->
+    <Build Include="Tables\Attendee\PersonalSchedule.sql" />
+    <Build Include="Tables\Attendee\PersonalScheduleEntry.sql" />
+    
+    <!-- Permissions tables -->
+    <Build Include="Tables\Permissions\FestivalPermission.sql" />
+    
+    <!-- Notifications tables -->
+    <Build Include="Tables\Notifications\NotificationPreference.sql" />
+    <Build Include="Tables\Notifications\DeviceToken.sql" />
+    <Build Include="Tables\Notifications\NotificationLog.sql" />
+    
+    <!-- Integrations tables -->
+    <Build Include="Tables\Integrations\ApiKey.sql" />
+    <Build Include="Tables\Integrations\WebhookSubscription.sql" />
+    <Build Include="Tables\Integrations\WebhookDelivery.sql" />
+    
+    <!-- Analytics tables -->
+    <Build Include="Tables\Analytics\AnalyticsEvent.sql" />
+    
+    <!-- Audit tables -->
+    <Build Include="Tables\Audit\AuditLog.sql" />
   </ItemGroup>
 
 </Project>

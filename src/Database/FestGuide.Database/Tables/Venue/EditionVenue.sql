@@ -4,11 +4,11 @@
 -- =======================================================
 CREATE TABLE [venue].[EditionVenue]
 (
-    [EditionVenueId]        UNIQUEIDENTIFIER    NOT NULL,
-    [EditionId]             UNIQUEIDENTIFIER    NOT NULL,
-    [VenueId]               UNIQUEIDENTIFIER    NOT NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_EditionVenue_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedBy]             UNIQUEIDENTIFIER    NOT NULL,
+    [EditionVenueId]        BIGINT IDENTITY(1,1)    NOT NULL,
+    [EditionId]             BIGINT                  NOT NULL,
+    [VenueId]               BIGINT                  NOT NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_EditionVenue_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedBy]             BIGINT                  NULL,
 
     CONSTRAINT [PK_EditionVenue] PRIMARY KEY CLUSTERED ([EditionVenueId]),
     CONSTRAINT [FK_EditionVenue_Edition] FOREIGN KEY ([EditionId]) REFERENCES [core].[FestivalEdition]([EditionId]),

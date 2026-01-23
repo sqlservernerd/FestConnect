@@ -4,19 +4,19 @@
 -- =======================================================
 CREATE TABLE [analytics].[AnalyticsEvent]
 (
-    [AnalyticsEventId]      UNIQUEIDENTIFIER    NOT NULL,
-    [UserId]                UNIQUEIDENTIFIER    NULL,       -- NULL for anonymous users
-    [FestivalId]            UNIQUEIDENTIFIER    NULL,
-    [EditionId]             UNIQUEIDENTIFIER    NULL,
-    [EventType]             NVARCHAR(100)       NOT NULL,   -- 'schedule_view', 'artist_save', 'engagement_add', etc.
-    [EntityType]            NVARCHAR(50)        NULL,       -- 'Schedule', 'Artist', 'Engagement', etc.
-    [EntityId]              UNIQUEIDENTIFIER    NULL,
-    [Metadata]              NVARCHAR(MAX)       NULL,       -- JSON metadata
-    [Platform]              NVARCHAR(20)        NULL,       -- 'ios', 'android', 'web'
-    [DeviceType]            NVARCHAR(50)        NULL,
-    [SessionId]             NVARCHAR(100)       NULL,
-    [EventTimestampUtc]     DATETIME2(7)        NOT NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_AnalyticsEvent_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [AnalyticsEventId]      BIGINT IDENTITY(1,1)    NOT NULL,
+    [UserId]                BIGINT                  NULL,       -- NULL for anonymous users
+    [FestivalId]            BIGINT                  NULL,
+    [EditionId]             BIGINT                  NULL,
+    [EventType]             NVARCHAR(100)           NOT NULL,   -- 'schedule_view', 'artist_save', 'engagement_add', etc.
+    [EntityType]            NVARCHAR(50)            NULL,       -- 'Schedule', 'Artist', 'Engagement', etc.
+    [EntityId]              BIGINT                  NULL,
+    [Metadata]              NVARCHAR(MAX)           NULL,       -- JSON metadata
+    [Platform]              NVARCHAR(20)            NULL,       -- 'ios', 'android', 'web'
+    [DeviceType]            NVARCHAR(50)            NULL,
+    [SessionId]             NVARCHAR(100)           NULL,
+    [EventTimestampUtc]     DATETIME2(7)            NOT NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_AnalyticsEvent_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
 
     CONSTRAINT [PK_AnalyticsEvent] PRIMARY KEY CLUSTERED ([AnalyticsEventId]),
     CONSTRAINT [FK_AnalyticsEvent_User] FOREIGN KEY ([UserId]) REFERENCES [identity].[User]([UserId]),

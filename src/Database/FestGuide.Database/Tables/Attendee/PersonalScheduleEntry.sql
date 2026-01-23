@@ -4,17 +4,17 @@
 -- =======================================================
 CREATE TABLE [attendee].[PersonalScheduleEntry]
 (
-    [PersonalScheduleEntryId]   UNIQUEIDENTIFIER    NOT NULL,
-    [PersonalScheduleId]        UNIQUEIDENTIFIER    NOT NULL,
-    [EngagementId]              UNIQUEIDENTIFIER    NOT NULL,
-    [Notes]                     NVARCHAR(MAX)       NULL,
-    [NotificationsEnabled]      BIT                 NOT NULL    CONSTRAINT [DF_PersonalScheduleEntry_NotificationsEnabled] DEFAULT (1),
-    [IsDeleted]                 BIT                 NOT NULL    CONSTRAINT [DF_PersonalScheduleEntry_IsDeleted] DEFAULT (0),
-    [DeletedAtUtc]              DATETIME2(7)        NULL,
-    [CreatedAtUtc]              DATETIME2(7)        NOT NULL    CONSTRAINT [DF_PersonalScheduleEntry_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedBy]                 UNIQUEIDENTIFIER    NULL,
-    [ModifiedAtUtc]             DATETIME2(7)        NOT NULL    CONSTRAINT [DF_PersonalScheduleEntry_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [ModifiedBy]                UNIQUEIDENTIFIER    NULL,
+    [PersonalScheduleEntryId]   BIGINT IDENTITY(1,1)    NOT NULL,
+    [PersonalScheduleId]        BIGINT                  NOT NULL,
+    [EngagementId]              BIGINT                  NOT NULL,
+    [Notes]                     NVARCHAR(MAX)           NULL,
+    [NotificationsEnabled]      BIT                     NOT NULL    CONSTRAINT [DF_PersonalScheduleEntry_NotificationsEnabled] DEFAULT (1),
+    [IsDeleted]                 BIT                     NOT NULL    CONSTRAINT [DF_PersonalScheduleEntry_IsDeleted] DEFAULT (0),
+    [DeletedAtUtc]              DATETIME2(7)            NULL,
+    [CreatedAtUtc]              DATETIME2(7)            NOT NULL    CONSTRAINT [DF_PersonalScheduleEntry_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedBy]                 BIGINT                  NULL,
+    [ModifiedAtUtc]             DATETIME2(7)            NOT NULL    CONSTRAINT [DF_PersonalScheduleEntry_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [ModifiedBy]                BIGINT                  NULL,
 
     CONSTRAINT [PK_PersonalScheduleEntry] PRIMARY KEY CLUSTERED ([PersonalScheduleEntryId]),
     CONSTRAINT [FK_PersonalScheduleEntry_PersonalSchedule] FOREIGN KEY ([PersonalScheduleId]) REFERENCES [attendee].[PersonalSchedule]([PersonalScheduleId]),

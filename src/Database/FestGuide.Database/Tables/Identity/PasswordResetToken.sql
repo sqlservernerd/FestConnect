@@ -4,16 +4,16 @@
 -- =======================================================
 CREATE TABLE [identity].[PasswordResetToken]
 (
-    [TokenId]               UNIQUEIDENTIFIER    NOT NULL,
-    [UserId]                UNIQUEIDENTIFIER    NOT NULL,
-    [TokenHash]             NVARCHAR(500)       NOT NULL,
-    [ExpiresAtUtc]          DATETIME2(7)        NOT NULL,
-    [IsUsed]                BIT                 NOT NULL    CONSTRAINT [DF_PasswordResetToken_IsUsed] DEFAULT (0),
-    [UsedAtUtc]             DATETIME2(7)        NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_PasswordResetToken_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedBy]             UNIQUEIDENTIFIER    NULL,
-    [ModifiedAtUtc]         DATETIME2(7)        NOT NULL    CONSTRAINT [DF_PasswordResetToken_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [ModifiedBy]            UNIQUEIDENTIFIER    NULL,
+    [TokenId]               BIGINT IDENTITY(1,1)    NOT NULL,
+    [UserId]                BIGINT                  NOT NULL,
+    [TokenHash]             NVARCHAR(500)           NOT NULL,
+    [ExpiresAtUtc]          DATETIME2(7)            NOT NULL,
+    [IsUsed]                BIT                     NOT NULL    CONSTRAINT [DF_PasswordResetToken_IsUsed] DEFAULT (0),
+    [UsedAtUtc]             DATETIME2(7)            NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_PasswordResetToken_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedBy]             BIGINT                  NULL,
+    [ModifiedAtUtc]         DATETIME2(7)            NOT NULL    CONSTRAINT [DF_PasswordResetToken_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [ModifiedBy]            BIGINT                  NULL,
 
     CONSTRAINT [PK_PasswordResetToken] PRIMARY KEY CLUSTERED ([TokenId]),
     CONSTRAINT [FK_PasswordResetToken_User] FOREIGN KEY ([UserId]) REFERENCES [identity].[User]([UserId])

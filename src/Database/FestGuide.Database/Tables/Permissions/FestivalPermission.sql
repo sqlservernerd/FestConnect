@@ -4,20 +4,20 @@
 -- =======================================================
 CREATE TABLE [permissions].[FestivalPermission]
 (
-    [FestivalPermissionId]  UNIQUEIDENTIFIER    NOT NULL,
-    [FestivalId]            UNIQUEIDENTIFIER    NOT NULL,
-    [UserId]                UNIQUEIDENTIFIER    NOT NULL,
-    [Role]                  TINYINT             NOT NULL,   -- 0 = Viewer, 1 = Manager, 2 = Administrator, 3 = Owner
-    [Scope]                 TINYINT             NOT NULL    CONSTRAINT [DF_FestivalPermission_Scope] DEFAULT (0), -- 0 = All, 1 = Venues, 2 = Schedule, 3 = Artists, 4 = Editions, 5 = Integrations
-    [InvitedByUserId]       UNIQUEIDENTIFIER    NULL,
-    [AcceptedAtUtc]         DATETIME2(7)        NULL,
-    [IsPending]             BIT                 NOT NULL    CONSTRAINT [DF_FestivalPermission_IsPending] DEFAULT (1),
-    [IsRevoked]             BIT                 NOT NULL    CONSTRAINT [DF_FestivalPermission_IsRevoked] DEFAULT (0),
-    [RevokedAtUtc]          DATETIME2(7)        NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_FestivalPermission_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedBy]             UNIQUEIDENTIFIER    NULL,
-    [ModifiedAtUtc]         DATETIME2(7)        NOT NULL    CONSTRAINT [DF_FestivalPermission_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [ModifiedBy]            UNIQUEIDENTIFIER    NULL,
+    [FestivalPermissionId]  BIGINT IDENTITY(1,1)    NOT NULL,
+    [FestivalId]            BIGINT                  NOT NULL,
+    [UserId]                BIGINT                  NOT NULL,
+    [Role]                  TINYINT                 NOT NULL,   -- 0 = Viewer, 1 = Manager, 2 = Administrator, 3 = Owner
+    [Scope]                 TINYINT                 NOT NULL    CONSTRAINT [DF_FestivalPermission_Scope] DEFAULT (0), -- 0 = All, 1 = Venues, 2 = Schedule, 3 = Artists, 4 = Editions, 5 = Integrations
+    [InvitedByUserId]       BIGINT                  NULL,
+    [AcceptedAtUtc]         DATETIME2(7)            NULL,
+    [IsPending]             BIT                     NOT NULL    CONSTRAINT [DF_FestivalPermission_IsPending] DEFAULT (1),
+    [IsRevoked]             BIT                     NOT NULL    CONSTRAINT [DF_FestivalPermission_IsRevoked] DEFAULT (0),
+    [RevokedAtUtc]          DATETIME2(7)            NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_FestivalPermission_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedBy]             BIGINT                  NULL,
+    [ModifiedAtUtc]         DATETIME2(7)            NOT NULL    CONSTRAINT [DF_FestivalPermission_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [ModifiedBy]            BIGINT                  NULL,
 
     CONSTRAINT [PK_FestivalPermission] PRIMARY KEY CLUSTERED ([FestivalPermissionId]),
     CONSTRAINT [FK_FestivalPermission_Festival] FOREIGN KEY ([FestivalId]) REFERENCES [core].[Festival]([FestivalId]),

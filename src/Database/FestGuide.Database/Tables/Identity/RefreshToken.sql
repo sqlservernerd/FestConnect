@@ -4,15 +4,15 @@
 -- =======================================================
 CREATE TABLE [identity].[RefreshToken]
 (
-    [RefreshTokenId]        UNIQUEIDENTIFIER    NOT NULL,
-    [UserId]                UNIQUEIDENTIFIER    NOT NULL,
-    [TokenHash]             NVARCHAR(500)       NOT NULL,
-    [ExpiresAtUtc]          DATETIME2(7)        NOT NULL,
-    [IsRevoked]             BIT                 NOT NULL    CONSTRAINT [DF_RefreshToken_IsRevoked] DEFAULT (0),
-    [RevokedAtUtc]          DATETIME2(7)        NULL,
-    [ReplacedByTokenId]     UNIQUEIDENTIFIER    NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_RefreshToken_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedByIp]           NVARCHAR(50)        NULL,
+    [RefreshTokenId]        BIGINT IDENTITY(1,1)    NOT NULL,
+    [UserId]                BIGINT                  NOT NULL,
+    [TokenHash]             NVARCHAR(500)           NOT NULL,
+    [ExpiresAtUtc]          DATETIME2(7)            NOT NULL,
+    [IsRevoked]             BIT                     NOT NULL    CONSTRAINT [DF_RefreshToken_IsRevoked] DEFAULT (0),
+    [RevokedAtUtc]          DATETIME2(7)            NULL,
+    [ReplacedByTokenId]     BIGINT                  NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_RefreshToken_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedByIp]           NVARCHAR(50)            NULL,
 
     CONSTRAINT [PK_RefreshToken] PRIMARY KEY CLUSTERED ([RefreshTokenId]),
     CONSTRAINT [FK_RefreshToken_User] FOREIGN KEY ([UserId]) REFERENCES [identity].[User]([UserId]),
