@@ -23,6 +23,8 @@ CREATE TABLE [schedule].[Schedule]
 GO
 
 -- Unique constraint: one published schedule per edition
+-- Note: Draft schedules (PublishedAtUtc IS NULL) are not constrained,
+--       allowing multiple drafts but only one published schedule per edition
 CREATE UNIQUE NONCLUSTERED INDEX [UQ_Schedule_EditionId_Published]
     ON [schedule].[Schedule]([EditionId])
     WHERE [PublishedAtUtc] IS NOT NULL;
