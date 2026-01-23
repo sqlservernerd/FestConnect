@@ -105,7 +105,7 @@ public class ScheduleServiceTests
             },
             new()
             {
-                EngagementId = 1L,
+                EngagementId = 2L,
                 TimeSlotId = timeSlot2Id,
                 ArtistId = artist2Id,
                 Notes = "Acoustic set"

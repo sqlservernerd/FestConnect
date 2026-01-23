@@ -76,7 +76,7 @@ public class PermissionServiceTests
             },
             new()
             {
-                FestivalPermissionId = 1L,
+                FestivalPermissionId = 2L,
                 FestivalId = festivalId,
                 UserId = user2Id,
                 Role = FestivalRole.Viewer,
@@ -157,7 +157,7 @@ public class PermissionServiceTests
             },
             new()
             {
-                FestivalPermissionId = 1L,
+                FestivalPermissionId = 2L,
                 FestivalId = festivalId2,
                 UserId = userId,
                 Role = FestivalRole.Viewer,
@@ -169,7 +169,7 @@ public class PermissionServiceTests
             },
             new()
             {
-                FestivalPermissionId = 1L,
+                FestivalPermissionId = 3L,
                 FestivalId = festivalId1,
                 UserId = userId,
                 Role = FestivalRole.Viewer,
