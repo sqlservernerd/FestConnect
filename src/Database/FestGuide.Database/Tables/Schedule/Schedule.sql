@@ -1,6 +1,8 @@
 -- =======================================================
 -- Table: schedule.Schedule
 -- Description: Master schedule for a festival edition
+--              Supports versioning: max 2 per edition
+--              (one published and one draft)
 -- =======================================================
 CREATE TABLE [schedule].[Schedule]
 (
@@ -20,9 +22,15 @@ CREATE TABLE [schedule].[Schedule]
 );
 GO
 
--- Unique constraint: one schedule per edition
-CREATE UNIQUE NONCLUSTERED INDEX [UQ_Schedule_EditionId]
-    ON [schedule].[Schedule]([EditionId]);
+-- Unique constraint: one published schedule per edition
+CREATE UNIQUE NONCLUSTERED INDEX [UQ_Schedule_EditionId_Published]
+    ON [schedule].[Schedule]([EditionId])
+    WHERE [PublishedAtUtc] IS NOT NULL;
+GO
+
+-- Index for edition schedule lookups
+CREATE NONCLUSTERED INDEX [IX_Schedule_EditionId]
+    ON [schedule].[Schedule]([EditionId], [Version] DESC);
 GO
 
 -- Index for published schedules
