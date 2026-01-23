@@ -4,17 +4,17 @@
 -- =======================================================
 CREATE TABLE [venue].[Stage]
 (
-    [StageId]               UNIQUEIDENTIFIER    NOT NULL,
-    [VenueId]               UNIQUEIDENTIFIER    NOT NULL,
-    [Name]                  NVARCHAR(200)       NOT NULL,
-    [Description]           NVARCHAR(MAX)       NULL,
-    [SortOrder]             INT                 NOT NULL    CONSTRAINT [DF_Stage_SortOrder] DEFAULT (0),
-    [IsDeleted]             BIT                 NOT NULL    CONSTRAINT [DF_Stage_IsDeleted] DEFAULT (0),
-    [DeletedAtUtc]          DATETIME2(7)        NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_Stage_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedBy]             UNIQUEIDENTIFIER    NULL,
-    [ModifiedAtUtc]         DATETIME2(7)        NOT NULL    CONSTRAINT [DF_Stage_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [ModifiedBy]            UNIQUEIDENTIFIER    NULL,
+    [StageId]               BIGINT IDENTITY(1,1)    NOT NULL,
+    [VenueId]               BIGINT                  NOT NULL,
+    [Name]                  NVARCHAR(200)           NOT NULL,
+    [Description]           NVARCHAR(MAX)           NULL,
+    [SortOrder]             INT                     NOT NULL    CONSTRAINT [DF_Stage_SortOrder] DEFAULT (0),
+    [IsDeleted]             BIT                     NOT NULL    CONSTRAINT [DF_Stage_IsDeleted] DEFAULT (0),
+    [DeletedAtUtc]          DATETIME2(7)            NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_Stage_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedBy]             BIGINT                  NULL,
+    [ModifiedAtUtc]         DATETIME2(7)            NOT NULL    CONSTRAINT [DF_Stage_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [ModifiedBy]            BIGINT                  NULL,
 
     CONSTRAINT [PK_Stage] PRIMARY KEY CLUSTERED ([StageId]),
     CONSTRAINT [FK_Stage_Venue] FOREIGN KEY ([VenueId]) REFERENCES [venue].[Venue]([VenueId])

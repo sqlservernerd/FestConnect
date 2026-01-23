@@ -4,23 +4,23 @@
 -- =======================================================
 CREATE TABLE [integrations].[ApiKey]
 (
-    [ApiKeyId]              UNIQUEIDENTIFIER    NOT NULL,
-    [FestivalId]            UNIQUEIDENTIFIER    NOT NULL,
-    [Name]                  NVARCHAR(100)       NOT NULL,
-    [KeyHash]               NVARCHAR(500)       NOT NULL,   -- SHA-256 hash of the key
-    [KeyPrefix]             NVARCHAR(10)        NOT NULL,   -- First 8 chars for identification
-    [Scopes]                NVARCHAR(500)       NULL,       -- Comma-separated scopes: 'read:schedule,read:artists'
-    [ExpiresAtUtc]          DATETIME2(7)        NULL,
-    [IsRevoked]             BIT                 NOT NULL    CONSTRAINT [DF_ApiKey_IsRevoked] DEFAULT (0),
-    [RevokedAtUtc]          DATETIME2(7)        NULL,
-    [RevokedBy]             UNIQUEIDENTIFIER    NULL,
-    [LastUsedAtUtc]         DATETIME2(7)        NULL,
-    [UsageCount]            BIGINT              NOT NULL    CONSTRAINT [DF_ApiKey_UsageCount] DEFAULT (0),
-    [RateLimitPerMinute]    INT                 NULL,       -- NULL = use default
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_ApiKey_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedBy]             UNIQUEIDENTIFIER    NOT NULL,
-    [ModifiedAtUtc]         DATETIME2(7)        NOT NULL    CONSTRAINT [DF_ApiKey_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [ModifiedBy]            UNIQUEIDENTIFIER    NULL,
+    [ApiKeyId]              BIGINT IDENTITY(1,1)    NOT NULL,
+    [FestivalId]            BIGINT                  NOT NULL,
+    [Name]                  NVARCHAR(100)           NOT NULL,
+    [KeyHash]               NVARCHAR(500)           NOT NULL,   -- SHA-256 hash of the key
+    [KeyPrefix]             NVARCHAR(10)            NOT NULL,   -- First 8 chars for identification
+    [Scopes]                NVARCHAR(500)           NULL,       -- Comma-separated scopes: 'read:schedule,read:artists'
+    [ExpiresAtUtc]          DATETIME2(7)            NULL,
+    [IsRevoked]             BIT                     NOT NULL    CONSTRAINT [DF_ApiKey_IsRevoked] DEFAULT (0),
+    [RevokedAtUtc]          DATETIME2(7)            NULL,
+    [RevokedBy]             BIGINT                  NULL,
+    [LastUsedAtUtc]         DATETIME2(7)            NULL,
+    [UsageCount]            BIGINT                  NOT NULL    CONSTRAINT [DF_ApiKey_UsageCount] DEFAULT (0),
+    [RateLimitPerMinute]    INT                     NULL,       -- NULL = use default
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_ApiKey_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedBy]             BIGINT                  NULL,
+    [ModifiedAtUtc]         DATETIME2(7)            NOT NULL    CONSTRAINT [DF_ApiKey_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [ModifiedBy]            BIGINT                  NULL,
 
     CONSTRAINT [PK_ApiKey] PRIMARY KEY CLUSTERED ([ApiKeyId]),
     CONSTRAINT [FK_ApiKey_Festival] FOREIGN KEY ([FestivalId]) REFERENCES [core].[Festival]([FestivalId]),

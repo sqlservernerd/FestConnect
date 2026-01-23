@@ -6,15 +6,15 @@
 -- =======================================================
 CREATE TABLE [schedule].[Schedule]
 (
-    [ScheduleId]            UNIQUEIDENTIFIER    NOT NULL,
-    [EditionId]             UNIQUEIDENTIFIER    NOT NULL,
-    [Version]               INT                 NOT NULL    CONSTRAINT [DF_Schedule_Version] DEFAULT (1),
-    [PublishedAtUtc]        DATETIME2(7)        NULL,
-    [PublishedBy]           UNIQUEIDENTIFIER    NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_Schedule_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedBy]             UNIQUEIDENTIFIER    NULL,
-    [ModifiedAtUtc]         DATETIME2(7)        NOT NULL    CONSTRAINT [DF_Schedule_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [ModifiedBy]            UNIQUEIDENTIFIER    NULL,
+    [ScheduleId]            BIGINT IDENTITY(1,1)    NOT NULL,
+    [EditionId]             BIGINT                  NOT NULL,
+    [Version]               INT                     NOT NULL    CONSTRAINT [DF_Schedule_Version] DEFAULT (1),
+    [PublishedAtUtc]        DATETIME2(7)            NULL,
+    [PublishedBy]           BIGINT                  NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_Schedule_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedBy]             BIGINT                  NULL,
+    [ModifiedAtUtc]         DATETIME2(7)            NOT NULL    CONSTRAINT [DF_Schedule_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [ModifiedBy]            BIGINT                  NULL,
 
     CONSTRAINT [PK_Schedule] PRIMARY KEY CLUSTERED ([ScheduleId]),
     CONSTRAINT [FK_Schedule_Edition] FOREIGN KEY ([EditionId]) REFERENCES [core].[FestivalEdition]([EditionId]),

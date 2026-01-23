@@ -4,18 +4,18 @@
 -- =======================================================
 CREATE TABLE [core].[Festival]
 (
-    [FestivalId]            UNIQUEIDENTIFIER    NOT NULL,
-    [Name]                  NVARCHAR(200)       NOT NULL,
-    [Description]           NVARCHAR(MAX)       NULL,
-    [ImageUrl]              NVARCHAR(2000)      NULL,
-    [WebsiteUrl]            NVARCHAR(2000)      NULL,
-    [OwnerUserId]           UNIQUEIDENTIFIER    NOT NULL,
-    [IsDeleted]             BIT                 NOT NULL    CONSTRAINT [DF_Festival_IsDeleted] DEFAULT (0),
-    [DeletedAtUtc]          DATETIME2(7)        NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_Festival_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedBy]             UNIQUEIDENTIFIER    NULL,
-    [ModifiedAtUtc]         DATETIME2(7)        NOT NULL    CONSTRAINT [DF_Festival_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [ModifiedBy]            UNIQUEIDENTIFIER    NULL,
+    [FestivalId]            BIGINT IDENTITY(1,1)    NOT NULL,
+    [Name]                  NVARCHAR(200)           NOT NULL,
+    [Description]           NVARCHAR(MAX)           NULL,
+    [ImageUrl]              NVARCHAR(2083)          NULL,
+    [WebsiteUrl]            NVARCHAR(2083)          NULL,
+    [OwnerUserId]           BIGINT                  NOT NULL,
+    [IsDeleted]             BIT                     NOT NULL    CONSTRAINT [DF_Festival_IsDeleted] DEFAULT (0),
+    [DeletedAtUtc]          DATETIME2(7)            NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_Festival_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedBy]             BIGINT                  NULL,
+    [ModifiedAtUtc]         DATETIME2(7)            NOT NULL    CONSTRAINT [DF_Festival_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [ModifiedBy]            BIGINT                  NULL,
 
     CONSTRAINT [PK_Festival] PRIMARY KEY CLUSTERED ([FestivalId]),
     CONSTRAINT [FK_Festival_OwnerUser] FOREIGN KEY ([OwnerUserId]) REFERENCES [identity].[User]([UserId])

@@ -4,23 +4,25 @@
 -- =======================================================
 CREATE TABLE [notifications].[NotificationLog]
 (
-    [NotificationLogId]     UNIQUEIDENTIFIER    NOT NULL,
-    [UserId]                UNIQUEIDENTIFIER    NOT NULL,
-    [DeviceTokenId]         UNIQUEIDENTIFIER    NULL,
-    [NotificationType]      NVARCHAR(50)        NOT NULL,   -- 'schedule_change', 'reminder', 'announcement', etc.
-    [Title]                 NVARCHAR(200)       NOT NULL,
-    [Body]                  NVARCHAR(MAX)       NOT NULL,
-    [DataPayload]           NVARCHAR(MAX)       NULL,       -- JSON payload
-    [RelatedEntityType]     NVARCHAR(50)        NULL,       -- 'Edition', 'Engagement', 'TimeSlot', etc.
-    [RelatedEntityId]       UNIQUEIDENTIFIER    NULL,
-    [SentAtUtc]             DATETIME2(7)        NOT NULL    CONSTRAINT [DF_NotificationLog_SentAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [IsDelivered]           BIT                 NOT NULL    CONSTRAINT [DF_NotificationLog_IsDelivered] DEFAULT (0),
-    [ErrorMessage]          NVARCHAR(MAX)       NULL,
-    [ReadAtUtc]             DATETIME2(7)        NULL,
-    [CreatedAtUtc]          DATETIME2(7)        NOT NULL    CONSTRAINT [DF_NotificationLog_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [CreatedBy]             UNIQUEIDENTIFIER    NULL,
-    [ModifiedAtUtc]         DATETIME2(7)        NOT NULL    CONSTRAINT [DF_NotificationLog_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
-    [ModifiedBy]            UNIQUEIDENTIFIER    NULL,
+    [NotificationLogId]     BIGINT IDENTITY(1,1)    NOT NULL,
+    [UserId]                BIGINT                  NOT NULL,
+    [DeviceTokenId]         BIGINT                  NULL,
+    [NotificationType]      NVARCHAR(50)            NOT NULL,   -- 'schedule_change', 'reminder', 'announcement', etc.
+    [Title]                 NVARCHAR(200)           NOT NULL,
+    [Body]                  NVARCHAR(MAX)           NOT NULL,
+    [DataPayload]           NVARCHAR(MAX)           NULL,       -- JSON payload
+    [RelatedEntityType]     NVARCHAR(50)            NULL,       -- 'Edition', 'Engagement', 'TimeSlot', etc.
+    [RelatedEntityId]       BIGINT                  NULL,
+    [SentAtUtc]             DATETIME2(7)            NOT NULL    CONSTRAINT [DF_NotificationLog_SentAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [IsDelivered]           BIT                     NOT NULL    CONSTRAINT [DF_NotificationLog_IsDelivered] DEFAULT (0),
+    [ErrorMessage]          NVARCHAR(MAX)           NULL,
+    [ReadAtUtc]             DATETIME2(7)            NULL,
+    [IsDeleted]             BIT                     NOT NULL    CONSTRAINT [DF_NotificationLog_IsDeleted] DEFAULT (0),
+    [DeletedAtUtc]          DATETIME2(7)            NULL,
+    [CreatedAtUtc]          DATETIME2(7)            NOT NULL    CONSTRAINT [DF_NotificationLog_CreatedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [CreatedBy]             BIGINT                  NULL,
+    [ModifiedAtUtc]         DATETIME2(7)            NOT NULL    CONSTRAINT [DF_NotificationLog_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
+    [ModifiedBy]            BIGINT                  NULL,
 
     CONSTRAINT [PK_NotificationLog] PRIMARY KEY CLUSTERED ([NotificationLogId]),
     CONSTRAINT [FK_NotificationLog_User] FOREIGN KEY ([UserId]) REFERENCES [identity].[User]([UserId]),
