@@ -33,7 +33,7 @@ CREATE NONCLUSTERED INDEX [IX_Engagement_ArtistId]
     WHERE [IsDeleted] = 0;
 GO
 
--- Unique constraint: one artist per time slot
+-- Unique constraint: prevents duplicate artist assignments to the same time slot
 CREATE UNIQUE NONCLUSTERED INDEX [UQ_Engagement_TimeSlotId_ArtistId]
     ON [schedule].[Engagement]([TimeSlotId], [ArtistId])
     WHERE [IsDeleted] = 0;

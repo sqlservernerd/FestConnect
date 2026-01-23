@@ -23,11 +23,18 @@ CREATE TABLE [schedule].[Schedule]
 GO
 
 -- Unique constraint: one published schedule per edition
--- Note: Draft schedules (PublishedAtUtc IS NULL) are not constrained,
---       allowing multiple drafts but only one published schedule per edition
+-- Note: This constraint ensures only one published schedule exists per edition
 CREATE UNIQUE NONCLUSTERED INDEX [UQ_Schedule_EditionId_Published]
     ON [schedule].[Schedule]([EditionId])
     WHERE [PublishedAtUtc] IS NOT NULL;
+GO
+
+-- Unique constraint: one draft schedule per edition
+-- Note: This constraint ensures only one draft (unpublished) schedule exists per edition
+-- Combined with the published constraint above, this enforces max 2 schedules per edition
+CREATE UNIQUE NONCLUSTERED INDEX [UQ_Schedule_EditionId_Draft]
+    ON [schedule].[Schedule]([EditionId])
+    WHERE [PublishedAtUtc] IS NULL;
 GO
 
 -- Index for edition schedule lookups
