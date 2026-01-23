@@ -45,3 +45,9 @@ CREATE NONCLUSTERED INDEX [IX_FestivalPermission_InvitedByUserId]
     ON [permissions].[FestivalPermission]([InvitedByUserId])
     WHERE [InvitedByUserId] IS NOT NULL;
 GO
+
+-- Composite index for user + festival authorization checks
+CREATE NONCLUSTERED INDEX [IX_FestivalPermission_UserId_FestivalId]
+    ON [permissions].[FestivalPermission]([UserId], [FestivalId])
+    WHERE [IsRevoked] = 0;
+GO

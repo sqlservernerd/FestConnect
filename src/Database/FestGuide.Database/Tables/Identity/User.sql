@@ -21,7 +21,8 @@ CREATE TABLE [identity].[User]
     [ModifiedAtUtc]         DATETIME2(7)        NOT NULL    CONSTRAINT [DF_User_ModifiedAtUtc] DEFAULT (SYSUTCDATETIME()),
     [ModifiedBy]            UNIQUEIDENTIFIER    NULL,
 
-    CONSTRAINT [PK_User] PRIMARY KEY CLUSTERED ([UserId])
+    CONSTRAINT [PK_User] PRIMARY KEY CLUSTERED ([UserId]),
+    CONSTRAINT [CK_User_UserType] CHECK ([UserType] IN (0, 1))
 );
 GO
 
