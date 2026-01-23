@@ -22,10 +22,10 @@ public class SqlServerPasswordResetTokenRepository : IPasswordResetTokenReposito
     {
         const string sql = """
             INSERT INTO identity.PasswordResetToken (
-                TokenId, UserId, TokenHash, ExpiresAtUtc, IsUsed,
+                UserId, TokenHash, ExpiresAtUtc, IsUsed,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @TokenId, @UserId, @TokenHash, @ExpiresAtUtc, @IsUsed,
+                @UserId, @TokenHash, @ExpiresAtUtc, @IsUsed,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
             """;

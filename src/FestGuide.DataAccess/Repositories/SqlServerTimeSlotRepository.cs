@@ -100,10 +100,10 @@ public class SqlServerTimeSlotRepository : ITimeSlotRepository
     {
         const string sql = """
             INSERT INTO venue.TimeSlot (
-                TimeSlotId, StageId, EditionId, StartTimeUtc, EndTimeUtc, IsDeleted,
+                StageId, EditionId, StartTimeUtc, EndTimeUtc, IsDeleted,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @TimeSlotId, @StageId, @EditionId, @StartTimeUtc, @EndTimeUtc, @IsDeleted,
+                @StageId, @EditionId, @StartTimeUtc, @EndTimeUtc, @IsDeleted,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
             """;

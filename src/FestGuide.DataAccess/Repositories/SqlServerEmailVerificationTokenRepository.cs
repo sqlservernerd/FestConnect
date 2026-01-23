@@ -22,10 +22,10 @@ public class SqlServerEmailVerificationTokenRepository : IEmailVerificationToken
     {
         const string sql = """
             INSERT INTO identity.EmailVerificationToken (
-                TokenId, UserId, TokenHash, ExpiresAtUtc, IsUsed,
+                UserId, TokenHash, ExpiresAtUtc, IsUsed,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @TokenId, @UserId, @TokenHash, @ExpiresAtUtc, @IsUsed,
+                @UserId, @TokenHash, @ExpiresAtUtc, @IsUsed,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
             """;

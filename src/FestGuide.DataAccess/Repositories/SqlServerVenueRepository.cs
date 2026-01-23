@@ -77,11 +77,11 @@ public class SqlServerVenueRepository : IVenueRepository
     {
         const string sql = """
             INSERT INTO venue.Venue (
-                VenueId, FestivalId, Name, Description, Address,
+                FestivalId, Name, Description, Address,
                 Latitude, Longitude, IsDeleted,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @VenueId, @FestivalId, @Name, @Description, @Address,
+                @FestivalId, @Name, @Description, @Address,
                 @Latitude, @Longitude, @IsDeleted,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )

@@ -52,10 +52,10 @@ public class SqlServerScheduleRepository : IScheduleRepository
     {
         const string sql = """
             INSERT INTO schedule.Schedule (
-                ScheduleId, EditionId, Version, PublishedAtUtc, PublishedBy,
+                EditionId, Version, PublishedAtUtc, PublishedBy,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @ScheduleId, @EditionId, @Version, @PublishedAtUtc, @PublishedBy,
+                @EditionId, @Version, @PublishedAtUtc, @PublishedBy,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
             """;

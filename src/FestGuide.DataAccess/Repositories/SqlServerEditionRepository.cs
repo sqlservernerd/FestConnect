@@ -124,11 +124,11 @@ public class SqlServerEditionRepository : IEditionRepository
     {
         const string sql = """
             INSERT INTO core.FestivalEdition (
-                EditionId, FestivalId, Name, StartDateUtc, EndDateUtc,
+                FestivalId, Name, StartDateUtc, EndDateUtc,
                 TimezoneId, TicketUrl, Status, IsDeleted,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @EditionId, @FestivalId, @Name, @StartDateUtc, @EndDateUtc,
+                @FestivalId, @Name, @StartDateUtc, @EndDateUtc,
                 @TimezoneId, @TicketUrl, @Status, @IsDeleted,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
@@ -136,7 +136,6 @@ public class SqlServerEditionRepository : IEditionRepository
 
         await _connection.ExecuteAsync(new CommandDefinition(sql, new
         {
-            edition.EditionId,
             edition.FestivalId,
             edition.Name,
             edition.StartDateUtc,

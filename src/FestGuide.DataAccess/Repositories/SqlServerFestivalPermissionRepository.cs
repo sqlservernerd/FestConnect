@@ -184,11 +184,11 @@ public class SqlServerFestivalPermissionRepository : IFestivalPermissionReposito
     {
         const string sql = """
             INSERT INTO permissions.FestivalPermission (
-                FestivalPermissionId, FestivalId, UserId, Role, Scope,
+                FestivalId, UserId, Role, Scope,
                 InvitedByUserId, AcceptedAtUtc, IsPending, IsRevoked,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @FestivalPermissionId, @FestivalId, @UserId, @Role, @Scope,
+                @FestivalId, @UserId, @Role, @Scope,
                 @InvitedByUserId, @AcceptedAtUtc, @IsPending, @IsRevoked,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )
@@ -209,11 +209,11 @@ public class SqlServerFestivalPermissionRepository : IFestivalPermissionReposito
         
         const string sql = """
             INSERT INTO permissions.FestivalPermission (
-                FestivalPermissionId, FestivalId, UserId, Role, Scope,
+                FestivalId, UserId, Role, Scope,
                 InvitedByUserId, AcceptedAtUtc, IsPending, IsRevoked,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @FestivalPermissionId, @FestivalId, @UserId, @Role, @Scope,
+                @FestivalId, @UserId, @Role, @Scope,
                 @InvitedByUserId, @AcceptedAtUtc, @IsPending, @IsRevoked,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
             )

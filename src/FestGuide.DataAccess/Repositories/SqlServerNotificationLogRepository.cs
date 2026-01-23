@@ -93,12 +93,12 @@ public class SqlServerNotificationLogRepository : INotificationLogRepository
     {
         const string sql = """
             INSERT INTO notifications.NotificationLog (
-                NotificationLogId, UserId, DeviceTokenId, NotificationType,
+                UserId, DeviceTokenId, NotificationType,
                 Title, Body, DataPayload, RelatedEntityType, RelatedEntityId,
                 SentAtUtc, IsDelivered, ErrorMessage, ReadAtUtc,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @NotificationLogId, @UserId, @DeviceTokenId, @NotificationType,
+                @UserId, @DeviceTokenId, @NotificationType,
                 @Title, @Body, @DataPayload, @RelatedEntityType, @RelatedEntityId,
                 @SentAtUtc, @IsDelivered, @ErrorMessage, @ReadAtUtc,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
@@ -116,12 +116,12 @@ public class SqlServerNotificationLogRepository : INotificationLogRepository
     {
         const string sql = """
             INSERT INTO notifications.NotificationLog (
-                NotificationLogId, UserId, DeviceTokenId, NotificationType,
+                UserId, DeviceTokenId, NotificationType,
                 Title, Body, DataPayload, RelatedEntityType, RelatedEntityId,
                 SentAtUtc, IsDelivered, ErrorMessage, ReadAtUtc,
                 CreatedAtUtc, CreatedBy, ModifiedAtUtc, ModifiedBy
             ) VALUES (
-                @NotificationLogId, @UserId, @DeviceTokenId, @NotificationType,
+                @UserId, @DeviceTokenId, @NotificationType,
                 @Title, @Body, @DataPayload, @RelatedEntityType, @RelatedEntityId,
                 @SentAtUtc, @IsDelivered, @ErrorMessage, @ReadAtUtc,
                 @CreatedAtUtc, @CreatedBy, @ModifiedAtUtc, @ModifiedBy
